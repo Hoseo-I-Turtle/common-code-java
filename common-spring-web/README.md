@@ -16,6 +16,9 @@ MVC / WebFlux 가 함께 쓰는 웹 공통 코드. `common-spring-core` 를 포�
 - 응답과 로그에 사용자가 보낸 입력값을 그대로 남기지 않는다 (검증 실패 응답에 입력값 없음, 로그 본문은 마스킹).
   외부 호출 로그에는 쿼리스트링, 외부 오류 로그에는 상대 서버 응답 본문을 남기지 않는다.
 - 실패 응답에는 traceId 를 담아 응답만으로 로그를 찾을 수 있게 한다.
+- DB 예외(`DataIntegrityViolationException`, 낙관적 락 충돌 등)는 공통에서 매핑하지 않고 500 으로 둔다.
+  같은 예외에 요청 충돌(유니크 위반)과 서버 버그(NOT NULL / FK 위반, 길이 초과)가 섞여 있어 일괄 409 로 바꾸면 버그가 가려지고
+  error 로그(알림)도 사라지기 때문이다. 의미 있는 충돌은 서비스가 도메인 `BusinessException`(예: 이미 사용 중인 이메일)으로 바꾼다.
 - 외부 서비스 호출 실패(`RestClientException`)는 우리 서버의 문제로 보고 502 `C010` 으로 응답한다.
   상대 서버의 4xx 를 그대로 전달해야 하면 호출부에서 잡아 `BusinessException` 으로 바꾼다.
 - 컨트롤러 안의 Security 예외는 전역 예외 핸들러가 `ExceptionTranslationFilter` 와 같은 기준으로 판단한다.
