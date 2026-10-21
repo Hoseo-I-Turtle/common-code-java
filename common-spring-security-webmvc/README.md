@@ -29,6 +29,11 @@ Spring Security 를 쓰는 MVC 서비스용 모듈. Security 오류(401 / 403)�
 - 필터는 생성자로 받은 토큰 종류만 인증에 사용한다. 다른 종류의 토큰은 `typ` 이 달라 거부된다.
 - 토큰이 없으면 인증 없이 통과시키고(인가 규칙이 판단), 토큰이 잘못되었으면 경로와 관계없이 즉시 401 로 응답한다.
   그래서 클라이언트는 공개 경로에도 만료된 토큰을 보내지 않아야 한다.
+- 토큰 무효화(로그아웃)를 쓰면 `JwtBlacklistFilter` 를 같은 `JwtProvider` 로 만들어 `JwtAuthenticationFilter` 앞에 둔다
+  (`addFilterBefore(blacklistFilter, JwtAuthenticationFilter.class)`). 무효화된 토큰으로 `UserDetailsService` 를 호출하지 않기 위해서다.
+  - 다른 필터에 기대지 않도록 토큰을 직접 검증한 뒤 블랙리스트를 확인한다. 토큰이 없거나 잘못되었으면 판단하지 않고 넘긴다.
+  - 무효화된 토큰이면 401 `J003`.
+  - 로그아웃은 `JwtAuthenticationFilter` 가 `Authentication` details 에 넣은 클레임(`JWTClaimsSet`)으로 `TokenBlacklist.revoke` 를 호출한다.
 
 ## 패키지 / 클래스
 
@@ -40,6 +45,8 @@ Spring Security 를 쓰는 MVC 서비스용 모듈. Security 오류(401 / 403)�
 | `ApiAccessDeniedHandler` | 필터 단계 권한 없음 → 403 `C003` |
 | `SecurityErrorResponseWriter` | 필터 단계 오류를 `ApiBaseResponse` JSON 으로 응답에 쓴다 (traceId 포함) |
 | `JwtAuthenticationFilter` | `Authorization: Bearer` 토큰을 지정한 토큰 종류로 검증하고, `sub` 로 조회한 `UserDetails` 를 SecurityContext 에 넣는다 |
+| `JwtBlacklistFilter` | `TokenBlacklist` 에서 무효화된 토큰이면 401 `J003` 으로 응답한다 |
+| `BearerTokens` | `Authorization: Bearer` 헤더에서 토큰을 꺼낸다 (JWT 필터 공용, 패키지 내부) |
 
 ### `com.iturtle.spring.security.webmvc.autoconfigure`
 

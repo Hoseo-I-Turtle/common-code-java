@@ -1,5 +1,6 @@
 package com.iturtle.spring.security.jwt;
 
+import com.iturtle.core.util.IdGenerateUtils;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -98,7 +99,8 @@ public class JwtProvider {
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder();
         // 표준 클레임(sub, exp 등)을 claims 로 덮어쓰지 못하도록 나중에 넣는다
         claims.forEach(builder::claim);
-        builder.subject(subject)
+        builder.jwtID(IdGenerateUtils.getUuidV7().toString())   // 토큰 무효화(TokenBlacklist) 식별자
+                .subject(subject)
                 .issueTime(Date.from(now))
                 .expirationTime(Date.from(now.plus(expiration)));
         if (settings.getIssuer() != null) {

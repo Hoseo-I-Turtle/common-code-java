@@ -23,6 +23,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
  * SecurityFilterChain securityFilterChain(HttpSecurity http, JwtProviders jwtProviders,
  *                                         SecurityErrorResponseWriter writer,
  *                                         UserDetailsService userDetailsService,   // 서비스가 구현
+ *                                         TokenBlacklist tokenBlacklist,           // 서비스가 구현
  *                                         AuthenticationEntryPoint entryPoint,
  *                                         AccessDeniedHandler accessDeniedHandler) throws Exception {
  *     return http
@@ -36,6 +37,9 @@ import org.springframework.security.web.access.AccessDeniedHandler;
  *                     .accessDeniedHandler(accessDeniedHandler))
  *             .addFilterBefore(new JwtAuthenticationFilter(jwtProviders.get("access"), writer, userDetailsService),
  *                     UsernamePasswordAuthenticationFilter.class)
+ *             // 토큰 무효화(로그아웃)를 쓰면 TokenBlacklist 를 구현하고 인증 필터 앞에 둔다
+ *             .addFilterBefore(new JwtBlacklistFilter(jwtProviders.get("access"), tokenBlacklist, writer),
+ *                     JwtAuthenticationFilter.class)
  *             .build();
  * }
  * </pre>

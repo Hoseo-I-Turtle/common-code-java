@@ -34,6 +34,28 @@ class JwtProviderTest {
     }
 
     @Test
+    void eachTokenHasUniqueJti() {
+        JwtProvider provider = provider("access", hs256());
+
+        String first = provider.parse(provider.createToken("user-1", Map.of("jti", "fixed"))).getJWTID();
+        String second = provider.parse(provider.createToken("user-1", Map.of())).getJWTID();
+
+        assertNotNull(first);
+        assertNotEquals("fixed", first);
+        assertNotEquals(first, second);
+    }
+
+    @Test
+    void remainingLifetime() {
+        JwtProvider provider = provider("access", hs256());
+        JWTClaimsSet claims = provider.parse(provider.createToken("user-1", Map.of(), Duration.ofMinutes(10)));
+
+        Duration remaining = TokenBlacklist.remainingLifetime(claims);
+
+        assertTrue(remaining.compareTo(Duration.ofMinutes(9)) > 0 && remaining.compareTo(Duration.ofMinutes(10)) <= 0);
+    }
+
+    @Test
     void expirationFromTokenSettings() {
         JwtProperties.Token settings = hs256();
         settings.setExpiration(Duration.ofDays(14));

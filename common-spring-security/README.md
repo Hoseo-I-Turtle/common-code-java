@@ -17,8 +17,12 @@
 - 토큰 헤더 `typ` 에 토큰 이름(`access+jwt` 등)을 넣고 검증 시 확인한다. 같은 키를 쓰더라도 다른 종류의 토큰으로 쓸 수 없다.
 - 검증 시 토큰 헤더의 alg 를 믿지 않고 설정된 방식만 허용한다 (alg 바꿔치기 방지).
 - 키 설정이 잘못되면 애플리케이션 시작 시 실패한다. 모든 토큰 설정을 시작할 때 검증한다.
-- 검증 실패는 `InvalidJwtException`(`BusinessException`)으로 던진다. 만료는 `J001`, 그 외는 `J002` 로 구분해
-  클라이언트가 재발급 여부를 판단할 수 있게 한다.
+- 검증 실패는 `InvalidJwtException`(`BusinessException`)으로 던진다. 만료 `J001`(재발급 시도), 위조 / 형식 오류 `J002`,
+  무효화 `J003`(재로그인)으로 구분해 클라이언트가 다음 동작을 판단할 수 있게 한다.
+- 발급하는 모든 토큰에 `jti`(UUID v7)를 넣는다. 토큰 무효화의 식별자다.
+- 토큰 무효화 저장소(`TokenBlacklist`)는 인터페이스만 제공하고 서비스가 구현한다. 여러 인스턴스가 공유해야 하므로
+  보통 Redis 를 쓰고, 항목은 토큰 만료 시각까지만 보관한다(`TokenBlacklist.remainingLifetime` 을 TTL 로 사용).
+  클레임 전체를 받으므로 `jti` 단위(토큰 하나)뿐 아니라 `sub` + `iat` 기준(사용자의 모든 토큰)으로도 무효화할 수 있다.
 - 표준 클레임(`sub`, `exp`, `iat`, `iss`)은 사용자 클레임으로 덮어쓸 수 없다.
 - 키 교체(`kid`)는 아직 지원하지 않는다. 토큰 종류당 키는 하나다.
 
@@ -32,8 +36,9 @@
 | `JwtProvider` | 토큰 한 종류의 발급 / 검증 (typ, 서명, 만료, nbf, issuer) |
 | `JwtProperties` | `iturtle.security.jwt.*` 설정 (토큰별 서명 방식 / 키 / 유효 기간 / issuer, 시간 오차) |
 | `JwtAlgorithm` | 서명 방식 (`HS256`, `RS256`) |
-| `JwtErrorCode` | 토큰 검증 실패 코드 (`J001` 만료, `J002` 그 외) |
+| `JwtErrorCode` | 토큰 검증 실패 코드 (`J001` 만료, `J002` 위조 / 형식 오류, `J003` 무효화) |
 | `InvalidJwtException` | 토큰 검증 실패 예외 |
+| `TokenBlacklist` | 토큰 무효화 저장소 인터페이스 (서비스가 구현) |
 
 ### `com.iturtle.spring.security.autoconfigure`
 

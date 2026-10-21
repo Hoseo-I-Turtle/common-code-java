@@ -8,7 +8,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.AccountStatusUserDetailsChecker;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -43,8 +42,6 @@ import java.io.IOException;
  */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String BEARER_PREFIX = "Bearer ";
-
     private final JwtProvider jwtProvider;
     private final SecurityErrorResponseWriter writer;
     private final UserDetailsService userDetailsService;
@@ -65,7 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        String token = resolveToken(request);
+        String token = BearerTokens.resolve(request);
         if (token != null) {
             try {
                 JWTClaimsSet claims = jwtProvider.parse(token);
@@ -84,15 +81,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
-    }
-
-    private String resolveToken(HttpServletRequest request) {
-        String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (header == null || !header.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
-            return null;
-        }
-        String token = header.substring(BEARER_PREFIX.length()).trim();
-        return token.isEmpty() ? null : token;
     }
 
     private void authenticate(UserDetails user, JWTClaimsSet claims) {
