@@ -23,7 +23,7 @@ common-core                          순수 Java (예외 / 에러 코드 / 유�
      │       └─ common-spring-security-webmvc   MVC Security (401 / 403 JSON, JWT 필터, 블랙리스트 필터)
      └─ common-spring-security       Security 공통, 스택 무관 (JWT 발급 / 검증, 토큰 무효화 인터페이스)
          └─ common-spring-security-webmvc
-common-jpa                           JPA 공통 (아직 구현 없음)
+common-jpa                           JPA 공통 (생성 / 수정 / 삭제 시각과 사용자 자동 기록, soft delete)
 ```
 
 모듈별 규칙과 클래스 책임은 각 모듈의 README 에, 사용 예시는 클래스 javadoc 에 있다.
