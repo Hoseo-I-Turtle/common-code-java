@@ -18,5 +18,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework:spring-web'
     testImplementation 'org.springframework:spring-webmvc'
+    // 통합 테스트(실제 Tomcat + 자동 설정)
+    testImplementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-validation'
     testImplementation 'jakarta.servlet:jakarta.servlet-api'
 }

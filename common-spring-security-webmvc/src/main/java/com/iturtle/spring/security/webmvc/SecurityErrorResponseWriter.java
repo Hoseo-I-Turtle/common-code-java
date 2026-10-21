@@ -2,6 +2,7 @@ package com.iturtle.spring.security.webmvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iturtle.core.exception.ErrorCode;
+import com.iturtle.spring.security.jwt.JwtErrorCode;
 import com.iturtle.spring.web.dto.response.ApiBaseResponse;
 import com.iturtle.spring.web.dto.response.ErrorResponse;
 import com.iturtle.spring.web.logging.WebMdcKeys;
@@ -26,7 +27,12 @@ public class SecurityErrorResponseWriter {
     }
 
     public void write(HttpServletResponse response, ErrorCode errorCode, Exception e) throws IOException {
-        log.warn("[{}] {}", errorCode.getCode(), e.getMessage());
+        // 토큰 만료는 정상적인 수명 주기라 debug. 위조(J002) / 무효화된 토큰 재사용(J003)은 공격 신호일 수 있어 warn
+        if (errorCode == JwtErrorCode.EXPIRED_TOKEN) {
+            log.debug("[{}] {}", errorCode.getCode(), e.getMessage());
+        } else {
+            log.warn("[{}] {}", errorCode.getCode(), e.getMessage());
+        }
         if (response.isCommitted()) {
             return;
         }

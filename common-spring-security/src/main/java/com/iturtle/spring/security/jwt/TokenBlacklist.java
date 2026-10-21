@@ -2,8 +2,8 @@ package com.iturtle.spring.security.jwt;
 
 import com.nimbusds.jwt.JWTClaimsSet;
 
+import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 
 /**
  * 토큰 무효화(로그아웃, 탈취 대응) 저장소. 서비스가 구현한다 (여러 인스턴스가 공유해야 하므로 보통 Redis).
@@ -27,10 +27,14 @@ public interface TokenBlacklist {
      * 토큰이 만료될 때까지 남은 시간. 이미 만료되었으면 0.
      */
     static Duration remainingLifetime(JWTClaimsSet claims) {
+        return remainingLifetime(claims, Clock.systemUTC());
+    }
+
+    static Duration remainingLifetime(JWTClaimsSet claims, Clock clock) {
         if (claims.getExpirationTime() == null) {
             return Duration.ZERO;
         }
-        Duration remaining = Duration.between(Instant.now(), claims.getExpirationTime().toInstant());
+        Duration remaining = Duration.between(clock.instant(), claims.getExpirationTime().toInstant());
         return remaining.isNegative() ? Duration.ZERO : remaining;
     }
 }

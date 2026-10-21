@@ -13,7 +13,8 @@ Spring Security 를 쓰는 MVC 서비스용 모듈. Security 오류(401 / 403)�
   401 로 바뀐다.
 - 컨트롤러 단계의 Security 예외(`@PreAuthorize` 거부 등)는 이 모듈이 아니라 전역 예외 핸들러가 처리한다
   (`common-spring-web` README 참고). advice 를 하나로 유지하기 위해 이 모듈은 `@RestControllerAdvice` 를 두지 않는다.
-- 401 / 403 은 4xx 규칙에 따라 warn 으로 남긴다.
+- 401 / 403 은 4xx 규칙에 따라 warn 으로 남긴다. 단 토큰 만료(`J001`)는 정상적인 수명 주기이므로 debug 로 남긴다.
+  위조(`J002`)와 무효화된 토큰 재사용(`J003`)은 공격 신호일 수 있어 warn 을 유지한다.
 - JWT 표현(클레임 구성)은 서비스가 자유롭게 정한다. 공통 모듈은 토큰에서 `sub` 만 사용하고, 사용자 / 권한은
   서비스가 구현한 `UserDetailsService.loadUserByUsername(sub)` 가 돌려준 `UserDetails` 로 만든다.
   - principal = `UserDetails`, 권한 = `UserDetails.getAuthorities()`, details = 전체 클레임.

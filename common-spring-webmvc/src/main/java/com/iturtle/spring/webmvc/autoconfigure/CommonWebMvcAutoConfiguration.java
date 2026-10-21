@@ -7,6 +7,7 @@ import com.iturtle.spring.webmvc.exception.MvcErrorController;
 import com.iturtle.spring.webmvc.exception.MvcGlobalExceptionHandler;
 import com.iturtle.spring.webmvc.logging.MdcContributor;
 import com.iturtle.spring.webmvc.logging.MdcFilter;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -75,6 +76,8 @@ public class CommonWebMvcAutoConfiguration {
         FilterRegistrationBean<AccessLogFilter> registration =
                 new FilterRegistrationBean<>(new AccessLogFilter(properties));
         registration.setOrder(ACCESS_LOG_FILTER_ORDER);
+        // 예외로 끝난 요청은 에러 디스패치가 끝난 뒤 최종 상태 코드로 기록한다
+        registration.setDispatcherTypes(DispatcherType.REQUEST, DispatcherType.ERROR);
         return registration;
     }
 

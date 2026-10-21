@@ -1,13 +1,14 @@
 package com.iturtle.spring.web.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.iturtle.core.exception.ErrorCode;
 
 import java.util.List;
 
 /**
- * errors 는 입력값 검증 실패일 때만 채워지고, 그 외에는 null 이다.
- * traceId 는 로그 추적용이며 추적이 비활성화되어 있으면 null 이다.
+ * errors 는 입력값 검증 실패일 때만, traceId 는 추적이 활성화되어 있을 때만 채워진다. 값이 없으면 JSON 에서 빠진다.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record ErrorResponse(
         int status,
         String code,

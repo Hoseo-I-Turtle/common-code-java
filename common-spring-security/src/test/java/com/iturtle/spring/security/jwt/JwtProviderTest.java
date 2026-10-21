@@ -47,12 +47,11 @@ class JwtProviderTest {
 
     @Test
     void remainingLifetime() {
-        JwtProvider provider = provider("access", hs256());
+        JwtProvider provider = provider("access", hs256(), NOW);
         JWTClaimsSet claims = provider.parse(provider.createToken("user-1", Map.of(), Duration.ofMinutes(10)));
 
-        Duration remaining = TokenBlacklist.remainingLifetime(claims);
-
-        assertTrue(remaining.compareTo(Duration.ofMinutes(9)) > 0 && remaining.compareTo(Duration.ofMinutes(10)) <= 0);
+        assertEquals(Duration.ofMinutes(7), TokenBlacklist.remainingLifetime(claims, fixed(NOW.plus(Duration.ofMinutes(3)))));
+        assertEquals(Duration.ZERO, TokenBlacklist.remainingLifetime(claims, fixed(NOW.plus(Duration.ofHours(1)))));
     }
 
     @Test
@@ -183,7 +182,11 @@ class JwtProviderTest {
     }
 
     private JwtProvider provider(String name, JwtProperties.Token settings, Instant now) {
-        return new JwtProvider(name, settings, SKEW, Clock.fixed(now, ZoneOffset.UTC));
+        return new JwtProvider(name, settings, SKEW, fixed(now));
+    }
+
+    private Clock fixed(Instant now) {
+        return Clock.fixed(now, ZoneOffset.UTC);
     }
 
     private JwtProperties.Token hs256() {

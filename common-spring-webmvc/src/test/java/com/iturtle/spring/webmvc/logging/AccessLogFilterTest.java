@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import com.iturtle.spring.web.logging.AccessLogProperties;
 import com.iturtle.spring.web.logging.WebMdcKeys;
@@ -90,15 +91,56 @@ class AccessLogFilterTest {
     }
 
     @Test
-    void uncaughtExceptionLoggedAs500() {
+    void uncaughtExceptionLoggedAs500() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/orders");
 
+        MockHttpServletResponse response = new MockHttpServletResponse();
         assertThrows(IllegalStateException.class, () ->
-                filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> {
+                filter.doFilter(request, response, (req, res) -> {
                     throw new IllegalStateException("boom");
                 }));
 
+        // 최종 상태는 에러 디스패치에서 정해지므로 아직 기록하지 않는다
+        assertTrue(appender.list.isEmpty());
+
+        // 서블릿 컨테이너가 같은 요청으로 /error 를 디스패치한다
+        request.setDispatcherType(DispatcherType.ERROR);
+        filter.doFilter(request, response, (req, res) -> ((HttpServletResponse) res).setStatus(500));
+
         assertEquals(500, singleEventFields().get("http.response.status_code"));
+    }
+
+    @Test
+    void exceptionLoggedWithFinalStatusAndMdcFromErrorDispatch() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/orders");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MDC.put("user.id", "user-1");
+        assertThrows(IllegalStateException.class, () ->
+                filter.doFilter(request, response, (req, res) -> {
+                    throw new IllegalStateException("business conflict");
+                }));
+        MDC.clear();   // 에러 디스패치 시점에는 MdcFilter 가 MDC 를 이미 복원했다
+
+        request.setDispatcherType(DispatcherType.ERROR);
+        filter.doFilter(request, response, (req, res) -> ((HttpServletResponse) res).setStatus(409));
+
+        assertEquals(409, singleEventFields().get("http.response.status_code"));
+        assertEquals("user-1", appender.list.get(0).getMDCPropertyMap().get("user.id"));
+        assertNull(MDC.get("user.id"));
+    }
+
+    @Test
+    void errorDispatchWithoutPendingNotLoggedTwice() throws Exception {
+        // sendError 는 요청 단계에서 이미 기록되므로 이후 에러 디스패치에서 다시 기록하지 않는다
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/orders");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilter(request, response, (req, res) -> ((HttpServletResponse) res).sendError(403));
+
+        request.setDispatcherType(DispatcherType.ERROR);
+        filter.doFilter(request, response, (req, res) -> {
+        });
+
+        assertEquals(403, singleEventFields().get("http.response.status_code"));
     }
 
     @Test

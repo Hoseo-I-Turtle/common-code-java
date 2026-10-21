@@ -19,6 +19,9 @@ Spring MVC (Servlet) 서비스용 모듈. 의존성을 추가하면 자동 설�
   `Exception` 처리가 먼저 선택될 수 있다.
 - 필터 순서: Spring Security(`-100`) → `MdcFilter`(`-99`) → `AccessLogFilter`(`-98`). 인증 정보를 MDC 에 넣고,
   그 값이 접근 로그에도 포함되게 하기 위한 순서이므로 바꿀 때는 이 관계를 유지한다.
+- 접근 로그는 응답의 최종 상태 코드로 한 번만 남긴다. 처리되지 않은 예외로 끝난 요청은 최종 상태가 이후 에러 디스패치(`/error`)에서
+  정해지므로, 요청 정보와 MDC 를 보관했다가 에러 디스패치가 끝난 뒤 기록한다. 이를 위해 `AccessLogFilter` 는
+  REQUEST / ERROR 디스패치에 모두 등록한다.
 - List 설정(`exclude-paths`, `masked-fields`)은 지정하면 기본값이 통째로 교체된다. 기본값을 유지하면서 늘릴 때는
   `additional-*` 를 사용한다.
 
@@ -43,4 +46,4 @@ Spring MVC (Servlet) 서비스용 모듈. 의존성을 추가하면 자동 설�
 |---|---|
 | `MdcFilter` | 요청마다 기본 MDC 값과 `MdcContributor` 값을 반영하고, 요청이 끝나면 복원한다 |
 | `MdcContributor` | 서비스가 요청별 MDC 값(사용자 ID 등)을 추가하는 확장 지점 |
-| `AccessLogFilter` | 서블릿 요청에서 접근 로그 값을 꺼내 `AccessLogWriter` 로 기록한다. 에러 응답 본문을 위해 요청 본문을 캐싱한다 |
+| `AccessLogFilter` | 서블릿 요청에서 접근 로그 값을 꺼내 최종 상태 코드로 `AccessLogWriter` 에 기록한다. 에러 응답 본문을 위해 요청 본문을 캐싱한다 |

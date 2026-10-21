@@ -23,4 +23,7 @@ dependencies {
     testImplementation 'org.springframework:spring-web'
     testImplementation 'jakarta.servlet:jakarta.servlet-api'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    // 통합 테스트(실제 Tomcat + 자동 설정 + Security 체인)
+    testImplementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-security'
 }

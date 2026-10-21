@@ -19,10 +19,13 @@ dependencies {
     compileOnly 'org.springframework.data:spring-data-commons'
     // 컨트롤러 안의 Security 예외(@PreAuthorize 거부 등) 판단에서만 사용
     compileOnly 'org.springframework.security:spring-security-core'
+    // ErrorResponse 의 @JsonInclude. Jackson 이 없으면 어노테이션은 무시된다
+    compileOnly 'com.fasterxml.jackson.core:jackson-annotations'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-validation'
     testImplementation 'org.springframework.data:spring-data-commons'
     testImplementation 'org.springframework.security:spring-security-core'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
     testImplementation 'org.springframework:spring-web'
 }

@@ -9,6 +9,10 @@ MVC / WebFlux 가 함께 쓰는 웹 공통 코드. `common-spring-core` 를 포�
   `spring-web` 공통 타입만 사용한다. 스택 전용 코드는 각 스택 모듈에 둔다.
 - 공통 로직은 추상 클래스(`Abstract*`)나 요청 객체와 무관한 클래스로 만들고, 스택 모듈이 상속하거나 값을 넘겨 사용한다.
 - 응답은 항상 `ApiBaseResponse` 로 감싼다. 실패 응답은 전역 예외 핸들러만 만들고, 컨트롤러는 예외를 던진다.
+- 응답 JSON 에서 성공 / 실패의 모양(`success`, `data`, `error`)은 항상 유지하고, `error` 안의 선택 필드(`errors`, `traceId`)는
+  값이 없으면 뺀다.
+- 검증(`@Phone`)은 엄격하게, 마스킹(`MaskingUtils.phone`)은 느슨하게 판단한다. 검증은 잘못된 값을 막는 것이 목적이고,
+  마스킹은 형식이 조금 달라도 전화번호처럼 보이면 가리는 것이 목적이기 때문이다.
 - 응답과 로그에 사용자가 보낸 입력값을 그대로 남기지 않는다 (검증 실패 응답에 입력값 없음, 로그 본문은 마스킹).
   외부 호출 로그에는 쿼리스트링, 외부 오류 로그에는 상대 서버 응답 본문을 남기지 않는다.
 - 실패 응답에는 traceId 를 담아 응답만으로 로그를 찾을 수 있게 한다.
@@ -31,7 +35,7 @@ MVC / WebFlux 가 함께 쓰는 웹 공통 코드. `common-spring-core` 를 포�
 | 클래스 | 책임 |
 |---|---|
 | `ApiBaseResponse` | 공통 응답 형식 (`success`, `data`, `error`) |
-| `ErrorResponse` | 실패 정보 (`status`, `code`, `message`, `errors`, `traceId`) |
+| `ErrorResponse` | 실패 정보 (`status`, `code`, `message`, `errors`, `traceId`). 값이 없는 `errors` / `traceId` 는 JSON 에서 빠진다 |
 | `FieldErrorResponse` | 검증 실패 항목 (`field`, `reason`) |
 | `PageResponse` | 페이지 응답. Spring Data `Page` 변환 지원 |
 
@@ -45,7 +49,7 @@ MVC / WebFlux 가 함께 쓰는 웹 공통 코드. `common-spring-core` 를 포�
 
 | 클래스 | 책임 |
 |---|---|
-| `Phone` / `PhoneValidator` | 전화번호 형식 검증 |
+| `Phone` / `PhoneValidator` | 국내 전화번호 형식 검증. `type` 으로 휴대전화만(`MOBILE`) / 전체(`ANY`, 유선 / 070 / 050X / 대표번호 포함) 선택 |
 | `EnumValue` / `EnumValueValidator` | 문자열이 enum 상수 이름 중 하나인지 검증 |
 
 ### `com.iturtle.spring.web.client`
