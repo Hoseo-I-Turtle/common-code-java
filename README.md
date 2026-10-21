@@ -74,3 +74,7 @@ implementation 'com.iturtle:common-spring-webmvc:1.0-SNAPSHOT'
 
 통합 테스트(`com.iturtle.integration.*`)는 실제 Tomcat 을 띄우고, 라이브러리 패키지를 component scan 하지 않는
 서비스와 같은 조건에서 자동 설정 / `/error` / Security 체인 조립을 검증한다.
+
+## 라이선스
+
+[Apache License 2.0](LICENSE)
