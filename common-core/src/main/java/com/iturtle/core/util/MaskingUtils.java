@@ -13,10 +13,12 @@ public final class MaskingUtils {
     private static final Pattern PHONE = Pattern.compile("^(\\d{2,3})(-?)(\\d{3,4})(-?)(\\d{4})$");
     private static final Pattern RRN = Pattern.compile("^(\\d{6})(-?)(\\d)(\\d{6})$");
 
+    private MaskingUtils() {}
+
     /**
      * 이름: 첫 글자와 마지막 글자만 노출. (홍길동 → 홍*동, 홍길 → 홍*, 남궁민수 → 남**수)
      */
-    public String name(String value) {
+    public static String name(String value) {
         if (isBlank(value)) {
             return value;
         }
@@ -34,7 +36,7 @@ public final class MaskingUtils {
      * 전화번호: 가운데 자리 마스킹. (010-1234-5678 → 010-****-5678)
      * 형식이 맞지 않으면 마지막 4자리를 제외한 숫자를 마스킹한다.
      */
-    public String phone(String value) {
+    public static String phone(String value) {
         if (isBlank(value)) {
             return value;
         }
@@ -48,7 +50,7 @@ public final class MaskingUtils {
     /**
      * 이메일: 로컬 파트 앞 2자리만 노출. (abcdef@gmail.com → ab****@gmail.com, ab@gmail.com → a*@gmail.com)
      */
-    public String email(String value) {
+    public static String email(String value) {
         if (isBlank(value)) {
             return value;
         }
@@ -63,7 +65,7 @@ public final class MaskingUtils {
     /**
      * 주민등록번호: 성별 자리 이후 마스킹. (900101-1234567 → 900101-1******)
      */
-    public String rrn(String value) {
+    public static String rrn(String value) {
         if (isBlank(value)) {
             return value;
         }
@@ -77,7 +79,7 @@ public final class MaskingUtils {
     /**
      * 카드번호: 앞 4자리, 뒤 4자리만 노출. 구분자는 유지. (1234-5678-9012-3456 → 1234-****-****-3456)
      */
-    public String cardNumber(String value) {
+    public static String cardNumber(String value) {
         if (isBlank(value)) {
             return value;
         }
@@ -98,7 +100,7 @@ public final class MaskingUtils {
     /**
      * 계좌번호: 마지막 4자리를 제외한 숫자 마스킹. 구분자는 유지. (110-123-456789 → ***-***-**6789)
      */
-    public String accountNumber(String value) {
+    public static String accountNumber(String value) {
         if (isBlank(value)) {
             return value;
         }
@@ -108,7 +110,7 @@ public final class MaskingUtils {
     /**
      * 범용: [start, end) 구간을 마스킹. 범위는 문자열 길이에 맞게 보정된다.
      */
-    public String mask(String value, int start, int end) {
+    public static String mask(String value, int start, int end) {
         if (isBlank(value)) {
             return value;
         }
@@ -120,7 +122,7 @@ public final class MaskingUtils {
         return value.substring(0, from) + repeat(to - from) + value.substring(to);
     }
 
-    private String maskDigitsExceptLast(String value, int visible) {
+    private static String maskDigitsExceptLast(String value, int visible) {
         int maskCount = countDigits(value) - visible;
         StringBuilder sb = new StringBuilder(value.length());
         for (char c : value.toCharArray()) {
@@ -134,15 +136,15 @@ public final class MaskingUtils {
         return sb.toString();
     }
 
-    private int countDigits(String value) {
+    private static int countDigits(String value) {
         return (int) value.chars().filter(Character::isDigit).count();
     }
 
-    private String repeat(int count) {
+    private static String repeat(int count) {
         return String.valueOf(MASK).repeat(count);
     }
 
-    private boolean isBlank(String value) {
+    private static boolean isBlank(String value) {
         return value == null || value.isBlank();
     }
 }

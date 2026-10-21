@@ -14,6 +14,14 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * 서블릿 웹 애플리케이션에 전역 예외 핸들러, MDC 필터, 접근 로그 필터를 등록한다.
+ * <ul>
+ *     <li>예외 핸들러: MvcGlobalExceptionHandler 타입 빈을 등록하면 대체된다</li>
+ *     <li>MDC 필터: mdcFilterRegistration 이름의 빈을 등록하면 대체된다</li>
+ *     <li>접근 로그 필터: iturtle.web.access-log.enabled=false 로 끄거나 accessLogFilterRegistration 이름의 빈으로 대체한다</li>
+ * </ul>
+ */
 @AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @EnableConfigurationProperties(AccessLogProperties.class)

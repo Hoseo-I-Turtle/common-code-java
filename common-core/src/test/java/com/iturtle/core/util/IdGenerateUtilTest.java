@@ -8,13 +8,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class IdGenerateUtilTest {
 
-    private final IdGenerateUtils idGenerateUtil = new IdGenerateUtils();
-
     @Test
     void uuidV7() throws InterruptedException {
-        UUID first = idGenerateUtil.getUuidV7();
+        UUID first = IdGenerateUtils.getUuidV7();
         Thread.sleep(2);
-        UUID second = idGenerateUtil.getUuidV7();
+        UUID second = IdGenerateUtils.getUuidV7();
 
         assertEquals(7, first.version());
         assertEquals(2, first.variant());
@@ -23,16 +21,16 @@ class IdGenerateUtilTest {
 
     @Test
     void uuidV4() {
-        UUID uuid = idGenerateUtil.getUuidV4();
+        UUID uuid = IdGenerateUtils.getUuidV4();
         assertEquals(4, uuid.version());
         assertEquals(2, uuid.variant());
     }
 
     @Test
     void hex() {
-        assertTrue(idGenerateUtil.getHex8().matches("[0-9a-f]{8}"));
-        assertTrue(idGenerateUtil.getHex16().matches("[0-9a-f]{16}"));
-        assertTrue(idGenerateUtil.getHex32().matches("[0-9a-f]{32}"));
-        assertTrue(idGenerateUtil.getHex64().matches("[0-9a-f]{64}"));
+        assertTrue(IdGenerateUtils.getHex8().matches("[0-9a-f]{8}"));
+        assertTrue(IdGenerateUtils.getHex16().matches("[0-9a-f]{16}"));
+        assertTrue(IdGenerateUtils.getHex32().matches("[0-9a-f]{32}"));
+        assertTrue(IdGenerateUtils.getHex64().matches("[0-9a-f]{64}"));
     }
 }

@@ -1,0 +1,28 @@
+# common-core
+
+프레임워크에 의존하지 않는 순수 Java 공통 코드. 다른 모든 모듈이 `api` 로 포함한다.
+
+## 규칙
+
+- JDK 와 Lombok 외의 의존성을 추가하지 않는다. Spring, Jakarta 등 프레임워크 타입은 상위 모듈에 둔다.
+- HTTP 상태처럼 프레임워크 타입이 필요한 값은 기본 타입(`int`)으로 표현한다.
+- 유틸 클래스는 `final` + `private` 생성자 + `static` 메서드로 만들고 상태를 갖지 않는다.
+- 도메인 에러는 서비스에서 `ErrorCode` 를 구현한 enum 으로 정의한다. `C` 접두사 코드는 `CommonErrorCode` 전용이다.
+- `CommonErrorCode` 의 상태 코드는 항목마다 달라야 한다. 전역 예외 핸들러가 상태 코드로 항목을 찾는다.
+
+## 패키지 / 클래스
+
+### `com.iturtle.core.exception`
+
+| 클래스 | 책임 |
+|---|---|
+| `ErrorCode` | 에러 코드 규약 (`status`, `code`, `message`) |
+| `CommonErrorCode` | 모든 서비스가 공유하는 공통 에러 코드 (`C001` ~ `C009`, `C999`) |
+| `BusinessException` | 비즈니스 예외 최상위 클래스. `ErrorCode` 를 담아 전역 예외 핸들러가 응답을 만들게 한다 |
+
+### `com.iturtle.core.util`
+
+| 클래스 | 책임 |
+|---|---|
+| `IdGenerateUtils` | ID 생성. UUID v7(시간순 정렬) / v4, 길이별 랜덤 hex 문자열 |
+| `MaskingUtils` | 개인정보 마스킹 (이름, 전화번호, 이메일, 주민등록번호, 카드번호, 계좌번호, 범위 지정) |

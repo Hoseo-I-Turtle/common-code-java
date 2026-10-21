@@ -18,6 +18,15 @@ import java.util.stream.Stream;
 /**
  * 접근 로그를 com.iturtle.access 로거로 한 줄 기록한다 (ECS 필드). 4xx / 5xx 응답이면 마스킹된 요청 본문을 함께 남긴다.
  * 요청 객체에 의존하지 않으므로 MVC / WebFlux 필터가 공통으로 사용한다.
+ * <pre>
+ * http.response.status_code   응답 상태
+ * event.duration              처리 시간 (나노초)
+ * client.ip                   요청 원격 주소 (프록시 뒤라면 server.forward-headers-strategy 설정 필요)
+ * http.request.method         MDC 에 없을 때만
+ * url.path                    MDC 에 없을 때만
+ * url.query                   쿼리스트링 (마스킹)
+ * http.request.body.content   4xx / 5xx 일 때만, JSON / form / text 본문 (마스킹)
+ * </pre>
  */
 @Slf4j(topic = "com.iturtle.access")
 public class AccessLogWriter {

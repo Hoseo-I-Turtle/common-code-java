@@ -9,10 +9,12 @@ public final class IdGenerateUtils {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final HexFormat HEX = HexFormat.of();
 
+    private IdGenerateUtils() {}
+
     /**
      * RFC 9562 UUID v7 (48bit unix epoch millis + 74bit random). 시간순 정렬 가능.
      */
-    public UUID getUuidV7(){
+    public static UUID getUuidV7(){
         long timestamp = System.currentTimeMillis();
 
         long msb = (timestamp & 0xFFFF_FFFF_FFFFL) << 16;       // unix_ts_ms (48bit)
@@ -28,31 +30,31 @@ public final class IdGenerateUtils {
     /**
      * RFC 9562 UUID v4 (random).
      */
-    public UUID getUuidV4(){
+    public static UUID getUuidV4(){
         return UUID.randomUUID();
     }
 
     /** 8자리 hex 문자열 (4byte random) */
-    public String getHex8() {
+    public static String getHex8() {
         return randomHex(4);
     }
 
     /** 16자리 hex 문자열 (8byte random) */
-    public String getHex16() {
+    public static String getHex16() {
         return randomHex(8);
     }
 
     /** 32자리 hex 문자열 (16byte random) */
-    public String getHex32() {
+    public static String getHex32() {
         return randomHex(16);
     }
 
     /** 64자리 hex 문자열 (32byte random) */
-    public String getHex64() {
+    public static String getHex64() {
         return randomHex(32);
     }
 
-    private String randomHex(int byteLength) {
+    private static String randomHex(int byteLength) {
         byte[] bytes = new byte[byteLength];
         RANDOM.nextBytes(bytes);
         return HEX.formatHex(bytes);

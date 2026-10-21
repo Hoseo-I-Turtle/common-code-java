@@ -2,6 +2,10 @@ package com.iturtle.core.exception;
 
 import lombok.Getter;
 
+/**
+ * 서비스 공통 에러 코드. C 접두사는 공통 코드 전용이므로 도메인 에러 코드는 다른 접두사를 사용한다.
+ * 전역 예외 핸들러가 Spring 예외의 상태 코드를 이 enum 에서 찾으므로 상태 코드는 항목마다 달라야 한다.
+ */
 @Getter
 public enum CommonErrorCode implements ErrorCode {
 
@@ -11,6 +15,9 @@ public enum CommonErrorCode implements ErrorCode {
     NOT_FOUND(404, "C004", "리소스를 찾을 수 없습니다."),
     METHOD_NOT_ALLOWED(405, "C005", "지원하지 않는 HTTP 메서드입니다."),
     CONFLICT(409, "C006", "리소스가 충돌합니다."),
+    NOT_ACCEPTABLE(406, "C007", "지원하지 않는 응답 형식입니다."),
+    PAYLOAD_TOO_LARGE(413, "C008", "요청 크기가 너무 큽니다."),
+    UNSUPPORTED_MEDIA_TYPE(415, "C009", "지원하지 않는 Content-Type 입니다."),
     INTERNAL_SERVER_ERROR(500, "C999", "서버 내부 오류가 발생했습니다.");
 
     private final int status;
