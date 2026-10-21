@@ -22,6 +22,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
  * &#64;Bean
  * SecurityFilterChain securityFilterChain(HttpSecurity http, JwtProviders jwtProviders,
  *                                         SecurityErrorResponseWriter writer,
+ *                                         UserDetailsService userDetailsService,   // 서비스가 구현
  *                                         AuthenticationEntryPoint entryPoint,
  *                                         AccessDeniedHandler accessDeniedHandler) throws Exception {
  *     return http
@@ -33,7 +34,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
  *             .exceptionHandling(handling -&gt; handling
  *                     .authenticationEntryPoint(entryPoint)
  *                     .accessDeniedHandler(accessDeniedHandler))
- *             .addFilterBefore(new JwtAuthenticationFilter(jwtProviders.get("access"), writer),
+ *             .addFilterBefore(new JwtAuthenticationFilter(jwtProviders.get("access"), writer, userDetailsService),
  *                     UsernamePasswordAuthenticationFilter.class)
  *             .build();
  * }

@@ -14,8 +14,13 @@ Spring Security 를 쓰는 MVC 서비스용 모듈. Security 오류(401 / 403)�
 - 컨트롤러 단계의 Security 예외(`@PreAuthorize` 거부 등)는 이 모듈이 아니라 전역 예외 핸들러가 처리한다
   (`common-spring-web` README 참고). advice 를 하나로 유지하기 위해 이 모듈은 `@RestControllerAdvice` 를 두지 않는다.
 - 401 / 403 은 4xx 규칙에 따라 warn 으로 남긴다.
-- `JwtAuthenticationFilter` 는 자동 등록하지 않는다. 서비스가 `SecurityFilterChain` 설정에서 어떤 토큰으로 인증할지
-  정해 직접 만들고(`new JwtAuthenticationFilter(jwtProviders.get("access"), writer)`) `addFilterBefore` 로 추가한다.
+- JWT 표현(클레임 구성)은 서비스가 자유롭게 정한다. 공통 모듈은 토큰에서 `sub` 만 사용하고, 사용자 / 권한은
+  서비스가 구현한 `UserDetailsService.loadUserByUsername(sub)` 가 돌려준 `UserDetails` 로 만든다.
+  - principal = `UserDetails`, 권한 = `UserDetails.getAuthorities()`, details = 전체 클레임.
+  - 사용자가 없거나 비활성 / 잠김 / 만료 계정이면 401 `C002` 로 응답한다 (토큰 오류 `J001` / `J002` 와 구분).
+  - 요청마다 조회하므로 DB 를 쓴다면 캐시를 고려한다. 대신 권한 변경 / 계정 정지가 토큰 만료를 기다리지 않고 반영된다.
+- `JwtAuthenticationFilter` 는 자동 등록하지 않는다. 서비스가 `SecurityFilterChain` 설정에서 어떤 토큰으로 인증할지 정해
+  직접 만들고(`new JwtAuthenticationFilter(jwtProviders.get("access"), writer, userDetailsService)`) `addFilterBefore` 로 추가한다.
   어떤 경로가 어떤 토큰을 쓰는지가 체인 설정에 그대로 드러나게 하기 위해서다.
 - `JwtAuthenticationFilter` 를 빈으로 등록하지 않는다. Filter 빈은 Spring Boot 가 서블릿 필터로도 자동 등록해
   Security 체인 밖에서 한 번 더 실행된다.
@@ -24,7 +29,6 @@ Spring Security 를 쓰는 MVC 서비스용 모듈. Security 오류(401 / 403)�
 - 필터는 생성자로 받은 토큰 종류만 인증에 사용한다. 다른 종류의 토큰은 `typ` 이 달라 거부된다.
 - 토큰이 없으면 인증 없이 통과시키고(인가 규칙이 판단), 토큰이 잘못되었으면 경로와 관계없이 즉시 401 로 응답한다.
   그래서 클라이언트는 공개 경로에도 만료된 토큰을 보내지 않아야 한다.
-- 인증 정보는 principal = `sub`, 권한 = 권한 클레임 값(기본 `roles`, 생성자로 변경. 접두사 없이 그대로), details = 전체 클레임이다.
 
 ## 패키지 / 클래스
 
@@ -35,7 +39,7 @@ Spring Security 를 쓰는 MVC 서비스용 모듈. Security 오류(401 / 403)�
 | `ApiAuthenticationEntryPoint` | 필터 단계 인증 실패 → 401 `C002` |
 | `ApiAccessDeniedHandler` | 필터 단계 권한 없음 → 403 `C003` |
 | `SecurityErrorResponseWriter` | 필터 단계 오류를 `ApiBaseResponse` JSON 으로 응답에 쓴다 (traceId 포함) |
-| `JwtAuthenticationFilter` | `Authorization: Bearer` 토큰을 지정한 토큰 종류로 검증해 SecurityContext 에 인증 정보를 넣는다 |
+| `JwtAuthenticationFilter` | `Authorization: Bearer` 토큰을 지정한 토큰 종류로 검증하고, `sub` 로 조회한 `UserDetails` 를 SecurityContext 에 넣는다 |
 
 ### `com.iturtle.spring.security.webmvc.autoconfigure`
 
