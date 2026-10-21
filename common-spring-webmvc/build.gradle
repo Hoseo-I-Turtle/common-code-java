@@ -1,0 +1,21 @@
+// Spring Web MVC (Servlet) 공통 코드
+apply plugin: 'io.spring.dependency-management'
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+    }
+}
+
+dependencies {
+    api project(':common-spring-web')
+
+    compileOnly 'org.springframework:spring-web'
+    compileOnly 'jakarta.servlet:jakarta.servlet-api'
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    compileOnly 'org.slf4j:slf4j-api'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework:spring-web'
+    testImplementation 'jakarta.servlet:jakarta.servlet-api'
+}

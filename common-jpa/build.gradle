@@ -1,0 +1,15 @@
+// JPA 공통 코드 (DB 사용하는 서비스만 의존)
+apply plugin: 'io.spring.dependency-management'
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+    }
+}
+
+dependencies {
+    api project(':common-core')
+
+    compileOnly 'jakarta.persistence:jakarta.persistence-api'
+    compileOnly 'org.springframework.data:spring-data-jpa'
+}

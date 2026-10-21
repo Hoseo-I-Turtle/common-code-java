@@ -1,3 +1,8 @@
 rootProject.name = 'common-code'
 
 include 'common-core'
+
+include 'common-spring-core'
+include 'common-spring-web'
+include 'common-spring-webmvc'
+include 'common-jpa'
