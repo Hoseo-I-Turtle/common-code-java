@@ -1,5 +1,6 @@
 package com.iturtle.spring.webmvc.logging;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -16,6 +17,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -136,6 +138,26 @@ class AccessLogFilterTest {
         });
 
         assertTrue(appender.list.isEmpty());
+    }
+
+    @Test
+    void slowRequestLoggedAsWarn() throws Exception {
+        AccessLogProperties properties = new AccessLogProperties();
+        properties.setSlowThreshold(Duration.ZERO);
+        AccessLogFilter customFilter = new AccessLogFilter(properties);
+
+        customFilter.doFilter(new MockHttpServletRequest("GET", "/api/orders"), new MockHttpServletResponse(), (req, res) -> {
+        });
+
+        assertEquals(Level.WARN, appender.list.get(0).getLevel());
+    }
+
+    @Test
+    void normalRequestLoggedAsInfo() throws Exception {
+        filter.doFilter(new MockHttpServletRequest("GET", "/api/orders"), new MockHttpServletResponse(), (req, res) -> {
+        });
+
+        assertEquals(Level.INFO, appender.list.get(0).getLevel());
     }
 
     private MockHttpServletRequest jsonRequest(String path, String body) {

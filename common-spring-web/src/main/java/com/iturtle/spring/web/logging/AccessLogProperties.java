@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +17,7 @@ import java.util.List;
  *       exclude-paths: /actuator/**             # 지정하면 기본값을 대체
  *       additional-exclude-paths: /internal/**  # 기본값에 추가
  *       body-max-length: 2048
+ *       slow-threshold: 3s                      # 넘으면 warn 으로 기록
  *       masked-fields: password, token, ...     # 지정하면 기본값을 대체
  *       additional-masked-fields: email, phone  # 기본값에 추가
  * </pre>
@@ -36,6 +38,9 @@ public class AccessLogProperties {
 
     /** 에러 응답 시 남길 요청 본문 최대 바이트 */
     private int bodyMaxLength = 2048;
+
+    /** 처리 시간이 이 값 이상이면 접근 로그를 warn 으로 남긴다 */
+    private Duration slowThreshold = Duration.ofSeconds(3);
 
     /** 본문 / 쿼리스트링에서 값을 마스킹할 필드 이름 (대소문자 무시) */
     private List<String> maskedFields = new ArrayList<>(List.of(

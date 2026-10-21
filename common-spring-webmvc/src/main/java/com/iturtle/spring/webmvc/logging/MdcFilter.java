@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.MDC;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -16,6 +17,8 @@ import java.util.List;
  */
 public class MdcFilter extends OncePerRequestFilter {
 
+    public static final String TRACE_ID_ATTRIBUTE = MdcFilter.class.getName() + ".traceId";
+
     private final List<MdcContributor> contributors;
 
     public MdcFilter(List<MdcContributor> contributors) {
@@ -25,6 +28,11 @@ public class MdcFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        // 에러 디스패치(/error) 시점에는 MDC 가 이미 복원되어 있으므로 traceId 를 요청 속성에도 남긴다
+        String traceId = MDC.get(WebMdcKeys.TRACE_ID);
+        if (traceId != null) {
+            request.setAttribute(TRACE_ID_ATTRIBUTE, traceId);
+        }
         try (MdcContext ignored = createContext(request).open()) {
             filterChain.doFilter(request, response);
         }

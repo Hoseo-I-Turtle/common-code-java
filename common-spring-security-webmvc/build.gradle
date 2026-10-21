@@ -1,0 +1,26 @@
+// Spring Security (Servlet) 공통 코드 (Security 를 쓰는 MVC 서비스만 의존)
+apply plugin: 'io.spring.dependency-management'
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+    }
+}
+
+dependencies {
+    api project(':common-spring-webmvc')
+    api project(':common-spring-security')
+
+    compileOnly 'org.springframework.security:spring-security-web'
+    compileOnly 'org.springframework:spring-web'
+    compileOnly 'jakarta.servlet:jakarta.servlet-api'
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    compileOnly 'com.fasterxml.jackson.core:jackson-databind'
+    compileOnly 'org.slf4j:slf4j-api'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-web'
+    testImplementation 'org.springframework:spring-web'
+    testImplementation 'jakarta.servlet:jakarta.servlet-api'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+}

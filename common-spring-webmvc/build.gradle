@@ -17,5 +17,6 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework:spring-web'
+    testImplementation 'org.springframework:spring-webmvc'
     testImplementation 'jakarta.servlet:jakarta.servlet-api'
 }

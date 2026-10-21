@@ -1,0 +1,18 @@
+// Spring Security 공통 코드 (스택 무관). JWT 발급 / 검증
+apply plugin: 'io.spring.dependency-management'
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+    }
+}
+
+dependencies {
+    api project(':common-spring-core')
+    // JWT 가 이 모듈의 주 기능이므로 compileOnly 가 아니라 api 로 전달한다
+    api "com.nimbusds:nimbus-jose-jwt:${nimbusJoseJwtVersion}"
+
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}

@@ -9,6 +9,8 @@
 - 유틸 클래스는 `final` + `private` 생성자 + `static` 메서드로 만들고 상태를 갖지 않는다.
 - 도메인 에러는 서비스에서 `ErrorCode` 를 구현한 enum 으로 정의한다. `C` 접두사 코드는 `CommonErrorCode` 전용이다.
 - `CommonErrorCode` 의 상태 코드는 항목마다 달라야 한다. 전역 예외 핸들러가 상태 코드로 항목을 찾는다.
+  같은 상태 코드를 세분화하는 코드(예: 401 의 토큰 만료 / 위조)는 해당 모듈의 별도 enum 에 둔다.
+- 응답 메시지는 항상 `ErrorCode` 의 메시지다. `BusinessException` 에 상세 메시지를 넘기면 로그에만 남는다.
 
 ## 패키지 / 클래스
 
@@ -17,8 +19,8 @@
 | 클래스 | 책임 |
 |---|---|
 | `ErrorCode` | 에러 코드 규약 (`status`, `code`, `message`) |
-| `CommonErrorCode` | 모든 서비스가 공유하는 공통 에러 코드 (`C001` ~ `C009`, `C999`) |
-| `BusinessException` | 비즈니스 예외 최상위 클래스. `ErrorCode` 를 담아 전역 예외 핸들러가 응답을 만들게 한다 |
+| `CommonErrorCode` | 모든 서비스가 공유하는 공통 에러 코드 (`C001` ~ `C010`, `C999`). `fromStatus` 로 상태 코드 → 코드 변환 |
+| `BusinessException` | 비즈니스 예외 최상위 클래스. `ErrorCode` 와 로그용 상세 메시지를 담아 전역 예외 핸들러가 응답을 만들게 한다 |
 
 ### `com.iturtle.core.util`
 

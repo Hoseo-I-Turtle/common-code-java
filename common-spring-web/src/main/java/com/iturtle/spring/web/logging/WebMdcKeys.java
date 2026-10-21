@@ -8,6 +8,9 @@ public final class WebMdcKeys {
     public static final String HTTP_REQUEST_METHOD = "http.request.method";
     public static final String URL_PATH = "url.path";
 
+    /** Micrometer Tracing 이 MDC 에 넣는 키 */
+    public static final String TRACE_ID = "traceId";
+
     private WebMdcKeys() {}
 
 }

@@ -4,6 +4,7 @@ import com.iturtle.core.exception.CommonErrorCode;
 import com.iturtle.spring.web.dto.response.ApiBaseResponse;
 import com.iturtle.spring.web.dto.response.FieldErrorResponse;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -12,6 +13,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
@@ -22,9 +24,9 @@ class MvcGlobalExceptionHandlerTest {
     private final MvcGlobalExceptionHandler handler = new MvcGlobalExceptionHandler();
 
     @Test
-    void errorResponseNotFoundMappedTo404() {
-        // NoResourceFoundException 과 같은 경로 (ErrorResponse + 404)
-        assertError(handler.handleException(new ErrorResponseException(HttpStatus.NOT_FOUND)), CommonErrorCode.NOT_FOUND);
+    void noResourceFoundMappedTo404() {
+        assertError(handler.handleException(new NoResourceFoundException(HttpMethod.GET, "/unknown")),
+                CommonErrorCode.NOT_FOUND);
     }
 
     @Test

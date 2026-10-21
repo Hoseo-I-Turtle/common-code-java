@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+  com.iturtle.spring.web.client.HttpClientDefaultsEnvironmentPostProcessor

@@ -18,6 +18,7 @@ public enum CommonErrorCode implements ErrorCode {
     NOT_ACCEPTABLE(406, "C007", "지원하지 않는 응답 형식입니다."),
     PAYLOAD_TOO_LARGE(413, "C008", "요청 크기가 너무 큽니다."),
     UNSUPPORTED_MEDIA_TYPE(415, "C009", "지원하지 않는 Content-Type 입니다."),
+    EXTERNAL_API_ERROR(502, "C010", "외부 서비스 호출에 실패했습니다."),
     INTERNAL_SERVER_ERROR(500, "C999", "서버 내부 오류가 발생했습니다.");
 
     private final int status;
@@ -28,5 +29,17 @@ public enum CommonErrorCode implements ErrorCode {
         this.status = status;
         this.code = code;
         this.message = message;
+    }
+
+    /**
+     * 같은 상태 코드의 항목을 찾는다. 없으면 4xx 는 INVALID_INPUT, 그 외는 INTERNAL_SERVER_ERROR.
+     */
+    public static CommonErrorCode fromStatus(int status) {
+        for (CommonErrorCode errorCode : values()) {
+            if (errorCode.status == status) {
+                return errorCode;
+            }
+        }
+        return status >= 400 && status < 500 ? INVALID_INPUT : INTERNAL_SERVER_ERROR;
     }
 }
