@@ -16,6 +16,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.net.URI;
@@ -70,6 +71,9 @@ final class S3StorageConfigurations {
             if (StringUtils.hasText(properties.getAccessKey())) {
                 builder.credentialsProvider(credentials(properties));
             }
+            if (properties.isPathStyleAccess()) {
+                builder.forcePathStyle(true);
+            }
             return builder.build();
         }
 
@@ -85,6 +89,9 @@ final class S3StorageConfigurations {
             }
             if (StringUtils.hasText(properties.getAccessKey())) {
                 builder.credentialsProvider(credentials(properties));
+            }
+            if (properties.isPathStyleAccess()) {
+                builder.serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
             }
             return builder.build();
         }

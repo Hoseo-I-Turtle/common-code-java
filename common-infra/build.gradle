@@ -26,4 +26,7 @@ dependencies {
     testImplementation 'software.amazon.awssdk:s3'
     testImplementation "io.minio:minio:${minioVersion}"
     testImplementation 'org.springframework.data:spring-data-redis'
+    // 실제 서버 테스트 (Docker 가 없으면 건너뜀). 버전은 Boot BOM
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'io.lettuce:lettuce-core'
 }

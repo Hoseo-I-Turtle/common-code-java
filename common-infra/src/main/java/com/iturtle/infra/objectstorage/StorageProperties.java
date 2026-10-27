@@ -14,9 +14,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *       type: s3                     # s3 | minio
  *       bucket: my-bucket
  *       region: ap-northeast-2       # s3: 비우면 AWS 기본 설정(AWS_REGION 등)을 따른다
- *       endpoint:                    # s3: 비움 / minio: 필수 (예: http://localhost:9000)
+ *       endpoint:                    # s3: 비움(S3 호환 저장소면 그 주소) / minio: 필수 (예: http://localhost:9000)
  *       access-key: ${STORAGE_ACCESS_KEY}  # s3: 비우면 AWS 기본 자격 증명(IAM Role 등) / minio: 필수
  *       secret-key: ${STORAGE_SECRET_KEY}
+ *       path-style-access: false     # s3: endpoint 로 S3 호환 저장소에 붙을 때 true
  * </pre>
  */
 @Getter
@@ -38,5 +39,10 @@ public class StorageProperties {
     private String accessKey;
 
     private String secretKey;
+
+    /**
+     * s3: endpoint 로 S3 호환 저장소(MinIO, Ceph 등)에 붙을 때 true. 주소를 버킷.host 대신 host/버킷 으로 만든다
+     */
+    private boolean pathStyleAccess = false;
 
 }

@@ -24,9 +24,10 @@ final class StoragePropertiesChecks {
      */
     static void rejectClientProperties(StorageProperties properties, String clientType) {
         if (StringUtils.hasText(properties.getRegion()) || StringUtils.hasText(properties.getEndpoint())
-                || StringUtils.hasText(properties.getAccessKey()) || StringUtils.hasText(properties.getSecretKey())) {
+                || StringUtils.hasText(properties.getAccessKey()) || StringUtils.hasText(properties.getSecretKey())
+                || properties.isPathStyleAccess()) {
             throw new InvalidConfigurationException(clientType + " 빈이 이미 있으므로 iturtle.infra.storage 의 region / "
-                    + "endpoint / access-key / secret-key 는 설정할 수 없다. 클라이언트 설정은 한 곳에서만 한다");
+                    + "endpoint / access-key / secret-key / path-style-access 는 설정할 수 없다. 클라이언트 설정은 한 곳에서만 한다");
         }
     }
 }

@@ -54,6 +54,30 @@ class StorageAutoConfigurationTest {
     }
 
     @Test
+    void s3PathStyleAccess() {
+        String[] properties = {
+                "iturtle.infra.storage.enabled=true",
+                "iturtle.infra.storage.type=s3",
+                "iturtle.infra.storage.bucket=my-bucket",
+                "iturtle.infra.storage.region=us-east-1",
+                "iturtle.infra.storage.endpoint=http://localhost:9000",
+                "iturtle.infra.storage.access-key=ak",
+                "iturtle.infra.storage.secret-key=sk"};
+
+        // 기본은 버킷이 호스트에 붙는다 (가상 호스트 방식). S3 호환 저장소는 대개 이 주소를 풀지 못한다
+        runner.withPropertyValues(properties)
+                .run(context -> assertThat(context.getBean(ObjectStorage.class)
+                        .createDownloadUrl("posts/a.png", Duration.ofMinutes(5)).toString())
+                        .startsWith("http://my-bucket.localhost:9000/posts/a.png"));
+
+        runner.withPropertyValues(properties)
+                .withPropertyValues("iturtle.infra.storage.path-style-access=true")
+                .run(context -> assertThat(context.getBean(ObjectStorage.class)
+                        .createDownloadUrl("posts/a.png", Duration.ofMinutes(5)).toString())
+                        .startsWith("http://localhost:9000/my-bucket/posts/a.png"));
+    }
+
+    @Test
     void minio() {
         runner.withPropertyValues(
                         "iturtle.infra.storage.enabled=true",

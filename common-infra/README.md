@@ -29,6 +29,8 @@
     `secret-key` 를 적으면 시작에 실패한다. S3Client 를 직접 등록하면 S3Presigner 도 등록한다.
   - 없으면 `iturtle.infra.storage` 설정으로 만든다. S3 자동 설정은 Spring Cloud AWS 자동 설정 다음에 실행되어
     그쪽 빈을 먼저 본다.
+- `type=s3` 로 S3 호환 저장소(MinIO, Ceph 등)에 `endpoint` 를 지정해 붙을 때는 `path-style-access=true` 로 둔다.
+  기본(가상 호스트 방식)은 `버킷.host` 주소를 만들어 대개 풀리지 않는다.
 - 필수 설정이 없거나 충돌하면 애플리케이션 시작 시 `InvalidConfigurationException`(common-core)으로 실패한다.
 - 모든 실패는 `StorageException`(`BusinessException`, `C010` 502)으로 던진다. 호출한 쪽은 인프라와 무관하게 이것만 잡고,
   잡지 않으면 전역 예외 핸들러가 502 로 응답한다.
@@ -45,6 +47,14 @@
 - 실패 로그와 예외 메시지의 키는 마지막 `:` 뒤(식별자 자리)를 가린다 (`auth:attempt:1234` → `auth:attempt:****`).
   그래도 접두사에 개인정보 / 비밀값을 넣지 않는다 (식별자는 마지막 자리에 두거나 `HashUtils` 로 해시).
 
+## 테스트
+
+- 자동 설정 / 장애 동작은 실제 서버 없이 테스트한다.
+- 실제 서버 테스트(`*ContainerTest`)는 Testcontainers 로 Redis(`redis:7.4.12-alpine`)와 S3 호환 서버(`adobe/s3mock`)를 띄운다.
+  Docker 가 없으면 건너뛰므로 `./gradlew build` 는 Docker 없이도 통과한다. 돌리려면 Docker 를 켠다.
+- S3 / MinIO 구현 모두 S3Mock 으로 검증한다 (MinIO 공식 이미지는 공개 레지스트리에서 익명으로 받을 수 없다).
+  S3Mock 은 서명을 검사하지 않으므로 presigned URL 의 서명 자체는 검증되지 않는다.
+
 ## 패키지 / 클래스
 
 ### `com.iturtle.infra.objectstorage`
@@ -52,7 +62,7 @@
 | 클래스 | 책임 |
 |---|---|
 | `ObjectStorage` | 파일 업로드 / 다운로드 / 삭제 / 존재 확인, presigned 업로드 / 다운로드 URL 생성 (인터페이스) |
-| `StorageProperties` | `iturtle.infra.storage.*` 설정 (enabled, type, bucket, region, endpoint, access-key, secret-key) |
+| `StorageProperties` | `iturtle.infra.storage.*` 설정 (enabled, type, bucket, region, endpoint, access-key, secret-key, path-style-access) |
 | `StorageType` | 구현체 종류 (`S3`, `MINIO`) |
 | `StorageException` | 스토리지 요청 실패 (`BusinessException`, `CommonErrorCode.EXTERNAL_API_ERROR`). 구현체가 SDK 예외를 감싼다 |
 
