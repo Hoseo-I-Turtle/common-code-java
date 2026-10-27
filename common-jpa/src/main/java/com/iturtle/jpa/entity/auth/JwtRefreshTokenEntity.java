@@ -1,6 +1,6 @@
 package com.iturtle.jpa.entity.auth;
 
-import com.iturtle.core.util.TokenHashUtils;
+import com.iturtle.core.util.HashUtils;
 import com.iturtle.jpa.entity.CreatedAtEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
@@ -92,7 +92,7 @@ public abstract class JwtRefreshTokenEntity<SUBJECT_ID, REVOKE_REASON> extends C
         this.familyId = familyId;
         this.jti = jti;
         this.previousJti = previousJti;
-        this.tokenHash = TokenHashUtils.sha256Hex(rawToken);
+        this.tokenHash = HashUtils.sha256Hex(rawToken);
         this.expiresAt = expiresAt;
     }
 
@@ -123,6 +123,6 @@ public abstract class JwtRefreshTokenEntity<SUBJECT_ID, REVOKE_REASON> extends C
      * rawToken 이 저장한 토큰과 같은지 해시로 확인한다.
      */
     public boolean matches(String rawToken) {
-        return TokenHashUtils.matches(rawToken, tokenHash);
+        return HashUtils.matchesSha256Hex(rawToken, tokenHash);
     }
 }

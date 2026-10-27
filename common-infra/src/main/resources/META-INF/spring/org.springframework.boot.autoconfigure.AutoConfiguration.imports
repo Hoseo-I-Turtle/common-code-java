@@ -1,2 +1,3 @@
 com.iturtle.infra.autoconfigure.S3StorageAutoConfiguration
 com.iturtle.infra.autoconfigure.MinioStorageAutoConfiguration
+com.iturtle.infra.autoconfigure.RedisStoreAutoConfiguration

@@ -36,7 +36,7 @@ JPA 를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
   - 종류 필드(`*_TYPE`, `JOB_STATUS`, `REVOKE_REASON`)는 enum 이나 String 이며 문자열로 저장한다.
   - ID 필드는 서비스가 고른 타입의 컬럼이 된다 (Long → bigint, UUID → uuid / binary(16), String → varchar).
     폴리모픽 대상 ID(`targetId`, `aggregateId`)는 여러 테이블의 키를 담으므로 String 이고, 라이브러리가 형식을 정하는 ID(jti)는 UUID 다.
-- refresh 토큰은 원문을 저장하지 않는다. 생성자가 원문을 받아 SHA-256 해시(`TokenHashUtils`)만 저장하고, `matches(rawToken)` 로 확인한다.
+- refresh 토큰은 원문을 저장하지 않는다. 생성자가 원문을 받아 SHA-256 해시(`HashUtils`)만 저장하고, `matches(rawToken)` 로 확인한다.
   재사용이 탐지되면 같은 `familyId` 의 토큰을 모두 폐기하는 것은 서비스가 한다. `revoke()` 는 처음 폐기 기록을 유지한다.
 - 시각은 서버 시간대와 무관하도록 `Instant`(UTC)로 저장한다.
 - 생성자 / 수정자 / 삭제자는 `String` 이다. Spring Security 가 있으면 로그인 사용자의 `Authentication.getName()`

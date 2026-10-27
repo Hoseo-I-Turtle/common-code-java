@@ -1,6 +1,6 @@
 # common-infra
 
-인프라(오브젝트 스토리지 등)를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
+인프라(오브젝트 스토리지, Redis 등)를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
 
 ## 규칙
 
@@ -34,6 +34,17 @@
   잡지 않으면 전역 예외 핸들러가 502 로 응답한다.
 - 버킷은 미리 만들어 둔다. 구현체는 버킷을 만들지 않는다.
 
+### Redis
+
+- 연결과 `StringRedisTemplate` 은 Spring Boot(`spring-boot-starter-data-redis`, `spring.data.redis.*`)가 만든다. 이 모듈은 연결을 만들지 않는다.
+- `iturtle.infra.redis.enabled=true` 이고 `StringRedisTemplate` 빈이 있으면 `RedisStore` 가 등록된다.
+- `RedisStore` 의 기본 메서드는 Redis 가 응답하지 않으면 WARN 로그(`com.iturtle.error`)만 남기고 「없음」으로 답한다 (캐시처럼 없어도 되는 값).
+  같은 작업의 실패는 10초에 한 번만 남기고 생략한 건수를 함께 남긴다. 스택 트레이스는 DEBUG 에서만 남긴다.
+  `*OrThrow` 메서드는 `RedisUnavailableException`(`BusinessException`, `C010` 502)을 던진다. 시도 제한처럼 동시성을 지키는 값은
+  실패를 「없음」으로 넘기면 제한이 풀리므로 이것을 쓰고, 부르는 쪽이 다른 길(DB 잠금 등)로 간다.
+- 실패 로그와 예외 메시지의 키는 마지막 `:` 뒤(식별자 자리)를 가린다 (`auth:attempt:1234` → `auth:attempt:****`).
+  그래도 접두사에 개인정보 / 비밀값을 넣지 않는다 (식별자는 마지막 자리에 두거나 `HashUtils` 로 해시).
+
 ## 패키지 / 클래스
 
 ### `com.iturtle.infra.objectstorage`
@@ -59,6 +70,13 @@
 | `S3ObjectStorage` | AWS SDK(`S3Client`, `S3Presigner`)로 구현 |
 | `MinioObjectStorage` | MinIO SDK(`MinioClient`)로 구현 |
 
+### `com.iturtle.infra.redis`
+
+| 클래스 | 책임 |
+|---|---|
+| `RedisStore` | Redis 공용 창구 (get / set / setIfAbsent / multiGet / hasKey / delete(키 하나, 여러 키를 DEL 하나로), TTL 을 붙여 여러 키를 파이프라인으로 쓰는 `multiSet`(원자적이지 않음), `*OrThrow`, TTL 과 함께 원자적으로 증가하는 `incrementOrThrow`) |
+| `RedisUnavailableException` | Redis 응답 없음 (`BusinessException`, `CommonErrorCode.EXTERNAL_API_ERROR`). `*OrThrow` 만 던진다 |
+
 ### `com.iturtle.infra.autoconfigure`
 
 | 클래스 | 책임 |
@@ -67,3 +85,4 @@
 | `MinioStorageAutoConfiguration` | MinIO SDK 가 있고 `type=minio` 일 때 `MinioObjectStorage` 등록. MinioClient 빈이 없을 때만 `MinioClient` 를 만든다 |
 | `S3StorageConfigurations` / `MinioStorageConfigurations` | 클라이언트 빈이 있을 때(`ProvidedClient`)와 없을 때(`OwnClient`)의 설정. 이 순서로 가져온다 |
 | `StoragePropertiesChecks` | 필수 설정 / 클라이언트 설정 충돌 검사 |
+| `RedisStoreAutoConfiguration` | spring-data-redis 가 있고 `StringRedisTemplate` 빈이 있으며 `iturtle.infra.redis.enabled=true` 일 때 `RedisStore` 등록 (Boot 의 `RedisAutoConfiguration` 다음) |
