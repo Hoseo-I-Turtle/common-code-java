@@ -15,6 +15,7 @@ JPA 를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
    ├ OutboxEntity<EVENT_TYPE>     + eventId, eventType, payload, status, attempts, publishedAt  ← transactional outbox
    │  └ PolymorphicOutboxEntity<EVENT_TYPE, AGGREGATE_TYPE>  + aggregateType, aggregateId
    ├ InboxEntity<EVENT_TYPE>      + messageId, eventType, payload, status, attempts, processedAt ← 중복 처리 방지 inbox
+   ├ JobEntity<JOB_STATUS>        + status, startedAt, finishedAt                               ← 여러 단계를 거치는 작업
    └ TimeEntity                   + updatedAt
       ├ SoftDeleteTimeEntity      + deletedAt
       └ AuditEntity               + createdBy, updatedBy
@@ -28,6 +29,8 @@ JPA 를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
   릴레이 폴링과 잠금, 끝난 행 정리, `(status, created_at)` 인덱스는 서비스가 정한다.
   aggregate 는 보통 payload 에 있으므로 `OutboxEntity` 로 충분하다. 메시지 키로 같은 aggregate 순서를 보장하거나
   Debezium Outbox Event Router 를 쓰는 등 컬럼으로 읽어야 할 때만 `PolymorphicOutboxEntity` 를 쓴다.
+- Job 은 `markRunning(status)` / `markFinished(status)` 로 진행 상황을 바꾸며, 처음 진행할 때 `startedAt`, 끝날 때
+  `finishedAt` 을 기록한다. 단계 구성, 실패 / 재시도, 작업 인자는 자식 엔티티가 정한다.
 - 시각은 서버 시간대와 무관하도록 `Instant`(UTC)로 저장한다.
 - 생성자 / 수정자 / 삭제자는 `String` 이다. Spring Security 가 있으면 로그인 사용자의 `Authentication.getName()`
   (JWT 인증이면 `sub`)을 넣고, 로그인하지 않았거나 익명이면 null 이다. 다른 값을 넣으려면 `AuditorAware<String>` 빈을 등록한다.
@@ -69,6 +72,12 @@ JPA 를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
 | `OutboxStatus` | `PENDING` → `PUBLISHED` / `FAILED` |
 | `InboxEntity<EVENT_TYPE>` | `CreatedAtEntity` + 받은 메시지(`messageId` unique, `eventType: EVENT_TYPE`, `payload`)와 처리 진행 상황(`status`, `attempts`, `processedAt`) |
 | `InboxStatus` | `RECEIVED` → `PROCESSED` / `FAILED` |
+
+### `com.iturtle.jpa.entity.job`
+
+| 클래스 | 책임 |
+|---|---|
+| `JobEntity<JOB_STATUS>` | `CreatedAtEntity` + 작업 진행 상황(`status: JOB_STATUS`)과 시작 / 종료 시각(`startedAt`, `finishedAt`) |
 
 ### `com.iturtle.jpa.auditing`
 
