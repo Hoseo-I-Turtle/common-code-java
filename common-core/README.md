@@ -21,6 +21,7 @@
 | `ErrorCode` | 에러 코드 규약 (`status`, `code`, `message`) |
 | `CommonErrorCode` | 모든 서비스가 공유하는 공통 에러 코드 (`C001` ~ `C010`, `C999`). `fromStatus` 로 상태 코드 → 코드 변환 |
 | `BusinessException` | 비즈니스 예외 최상위 클래스. `ErrorCode` 와 로그용 상세 메시지를 담아 전역 예외 핸들러가 응답을 만들게 한다 |
+| `InvalidConfigurationException` | 설정 누락 / 오류 / 충돌 (`IllegalStateException`). 애플리케이션 시작 시 던진다. 메시지에 설정 키와 고치는 방법을 적는다 |
 
 ### `com.iturtle.core.util`
 

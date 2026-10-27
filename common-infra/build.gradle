@@ -1,0 +1,23 @@
+// 인프라(오브젝트 스토리지 등) 공통 코드. 인프라 SDK 는 compileOnly 로 두고 서비스가 필요한 것만 추가한다
+apply plugin: 'io.spring.dependency-management'
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+        mavenBom "software.amazon.awssdk:bom:${awsSdkVersion}"
+    }
+}
+
+dependencies {
+    api project(':common-core')
+
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    annotationProcessor 'org.springframework.boot:spring-boot-autoconfigure-processor'
+    // 스토리지: type=s3 는 AWS SDK, type=minio 는 MinIO SDK 를 서비스가 추가한다
+    compileOnly 'software.amazon.awssdk:s3'
+    compileOnly "io.minio:minio:${minioVersion}"
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'software.amazon.awssdk:s3'
+    testImplementation "io.minio:minio:${minioVersion}"
+}

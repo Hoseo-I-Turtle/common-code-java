@@ -24,6 +24,7 @@ common-core                          순수 Java (예외 / 에러 코드 / 유�
      └─ common-spring-security       Security 공통, 스택 무관 (JWT 발급 / 검증, 토큰 무효화 인터페이스)
          └─ common-spring-security-webmvc
 common-jpa                           JPA 공통 (생성 / 수정 / 삭제 시각과 사용자 자동 기록, soft delete)
+common-infra                         인프라 공통 (오브젝트 스토리지). 인프라 SDK 는 서비스가 직접 추가
 ```
 
 모듈별 규칙과 클래스 책임은 각 모듈의 README 에, 사용 예시는 클래스 javadoc 에 있다.
@@ -38,6 +39,7 @@ common-jpa                           JPA 공통 (생성 / 수정 / 삭제 시각
 | Spring MVC API + Security / JWT | `common-spring-security-webmvc` | `spring-boot-starter-web`, `spring-boot-starter-security` |
 | 배치 / 컨슈머 (웹 없음) | `common-spring-core` | - |
 | JPA 사용 | 위 모듈 + `common-jpa` | `spring-boot-starter-data-jpa` |
+| 인프라 사용 | 위 모듈 + `common-infra` | 쓰는 인프라의 SDK (예: AWS SDK S3) |
 
 ```gradle
 implementation 'com.iturtle:common-spring-webmvc:1.0-SNAPSHOT'
