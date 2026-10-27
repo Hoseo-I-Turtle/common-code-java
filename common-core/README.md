@@ -30,3 +30,10 @@
 | `IdGenerateUtils` | ID 생성. UUID v7(시간순 정렬) / v4, 길이별 랜덤 hex 문자열 |
 | `MaskingUtils` | 개인정보 마스킹 (이름, 전화번호, 이메일, 주민등록번호, 카드번호, 계좌번호, 범위 지정) |
 | `HashUtils` | 단방향 해시. 토큰 원문 대신 저장할 SHA-256 hex(`sha256Hex`)와 비교(`matchesSha256Hex`, 시간 일정). 비밀번호에는 쓰지 않는다 |
+
+### `com.iturtle.core.strategy`
+
+| 클래스 | 책임 |
+|---|---|
+| `Strategy` | 키로 선택되는 전략 규약. 구현체가 처리할 키(`key()`)를 밝힌다 |
+| `StrategyRegistry` | 키 → 전략 조회. 생성 시 null / 중복 키는 `InvalidConfigurationException`. `get` 은 없는 키에 `IllegalArgumentException`(구현체 누락 = 코드 버그), `find` 는 `Optional` |
