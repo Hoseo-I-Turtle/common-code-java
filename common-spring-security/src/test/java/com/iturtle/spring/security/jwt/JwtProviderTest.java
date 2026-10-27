@@ -1,5 +1,6 @@
 package com.iturtle.spring.security.jwt;
 
+import com.iturtle.core.exception.InvalidConfigurationException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import org.junit.jupiter.api.Test;
 
@@ -139,7 +140,7 @@ class JwtProviderTest {
         JwtProperties.Token settings = hs256();
         settings.setSecret("short");
 
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> provider("access", settings));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> provider("access", settings));
 
         assertTrue(e.getMessage().contains("iturtle.security.jwt.tokens.access.secret"));
     }
@@ -153,7 +154,7 @@ class JwtProviderTest {
         String token = issuer.createToken("user-1", Map.of());
 
         assertEquals("user-1", verifier.parse(token).getSubject());
-        assertThrows(IllegalStateException.class, () -> verifier.createToken("user-1", Map.of()));
+        assertThrows(InvalidConfigurationException.class, () -> verifier.createToken("user-1", Map.of()));
     }
 
     @Test
@@ -174,7 +175,7 @@ class JwtProviderTest {
 
         assertEquals("refresh", providers.get("refresh").getName());
         assertThrows(IllegalArgumentException.class, () -> providers.get("unknown"));
-        assertThrows(IllegalStateException.class, () -> new JwtProviders(new JwtProperties()));
+        assertThrows(InvalidConfigurationException.class, () -> new JwtProviders(new JwtProperties()));
     }
 
     private JwtProvider provider(String name, JwtProperties.Token settings) {

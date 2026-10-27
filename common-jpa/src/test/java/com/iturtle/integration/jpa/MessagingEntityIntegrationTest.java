@@ -10,6 +10,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -88,8 +90,9 @@ class MessagingEntityIntegrationTest {
 
     @Test
     void polymorphicOutboxEnumsStoredAsName() {
+        UUID eventId = UUID.randomUUID();
         TestPolymorphicOutbox outbox = polymorphicOutboxRepository.saveAndFlush(
-                new TestPolymorphicOutbox("e-4", TestTarget.POST, "1", TestEvent.CREATED, "{}"));
+                new TestPolymorphicOutbox(eventId, TestTarget.POST, "1", TestEvent.CREATED, "{}"));
 
         TestPolymorphicOutbox found = polymorphicOutboxRepository.findById(outbox.getId()).orElseThrow();
         assertEquals(TestTarget.POST, found.getAggregateType());
@@ -99,6 +102,10 @@ class MessagingEntityIntegrationTest {
                 "select aggregate_type from test_polymorphic_outbox", String.class));
         assertEquals("CREATED", jdbcTemplate.queryForObject(
                 "select event_type from test_polymorphic_outbox", String.class));
+        // EVENT_ID 가 UUID 이면 varchar 가 아니라 uuid 컬럼이 된다
+        assertEquals(eventId, found.getEventId());
+        assertEquals("UUID", columnType("TEST_POLYMORPHIC_OUTBOX", "EVENT_ID"));
+        assertEquals("CHARACTER VARYING", columnType("TEST_OUTBOX", "EVENT_ID"));
     }
 
     @Test
@@ -124,6 +131,11 @@ class MessagingEntityIntegrationTest {
 
         assertThrows(DataIntegrityViolationException.class,
                 () -> inboxRepository.saveAndFlush(new TestInbox("m-dup", TestEvent.CREATED, "{}")));
+    }
+
+    private String columnType(String table, String column) {
+        return jdbcTemplate.queryForObject("select data_type from information_schema.columns "
+                + "where table_name = ? and column_name = ?", String.class, table, column);
     }
 
     @SpringBootApplication

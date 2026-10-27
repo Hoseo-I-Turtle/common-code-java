@@ -1,5 +1,7 @@
 package com.iturtle.spring.security.jwt;
 
+import com.iturtle.core.exception.InvalidConfigurationException;
+
 import java.time.Clock;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -20,7 +22,7 @@ public class JwtProviders {
 
     public JwtProviders(JwtProperties properties, Clock clock) {
         if (properties.getTokens().isEmpty()) {
-            throw new IllegalStateException("iturtle.security.jwt.tokens 에 토큰을 하나 이상 설정해야 한다");
+            throw new InvalidConfigurationException("iturtle.security.jwt.tokens 에 토큰을 하나 이상 설정해야 한다");
         }
         Map<String, JwtProvider> providers = new LinkedHashMap<>();
         properties.getTokens().forEach((name, settings) ->

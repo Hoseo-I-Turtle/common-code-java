@@ -6,7 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 
 @Entity
-public class TestOutbox extends OutboxEntity<String> {
+public class TestOutbox extends OutboxEntity<String, String> {
 
     @Id
     @GeneratedValue

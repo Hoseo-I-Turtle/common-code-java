@@ -1,5 +1,6 @@
 package com.iturtle.spring.security.jwt;
 
+import com.iturtle.core.exception.InvalidConfigurationException;
 import com.iturtle.core.util.IdGenerateUtils;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
@@ -36,7 +37,7 @@ import java.util.Map;
  * JWTClaimsSet claims = jwtProviders.get("access").parse(token);   // 실패하면 InvalidJwtException
  * </pre>
  * 헤더 typ 에 토큰 이름("access+jwt")을 넣고 검증 시 확인하므로, 같은 키를 쓰더라도 refresh 토큰을 access 토큰으로 쓸 수 없다.
- * RS256 에서 private-key 가 없으면 검증만 가능하고, 발급하면 IllegalStateException 이 발생한다.
+ * RS256 에서 private-key 가 없으면 검증만 가능하고, 발급하면 InvalidConfigurationException 이 발생한다.
  * 설정이 잘못되었으면(secret 길이 부족, PEM 형식 오류 등) 애플리케이션 시작 시 실패한다.
  */
 public class JwtProvider {
@@ -76,7 +77,7 @@ public class JwtProvider {
                 this.verifier = new MACVerifier(secret);
             }
         } catch (JOSEException | GeneralSecurityException | IllegalArgumentException e) {
-            throw new IllegalStateException(property("") + " 키 설정이 올바르지 않다: " + e.getMessage(), e);
+            throw new InvalidConfigurationException(property("") + " 키 설정이 올바르지 않다: " + e.getMessage(), e);
         }
     }
 
@@ -93,7 +94,7 @@ public class JwtProvider {
 
     public String createToken(String subject, Map<String, ?> claims, Duration expiration) {
         if (signer == null) {
-            throw new IllegalStateException(property("private-key") + " 가 없어 " + name + " 토큰을 발급할 수 없다 (검증 전용)");
+            throw new InvalidConfigurationException(property("private-key") + " 가 없어 " + name + " 토큰을 발급할 수 없다 (검증 전용)");
         }
         Instant now = clock.instant();
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder();

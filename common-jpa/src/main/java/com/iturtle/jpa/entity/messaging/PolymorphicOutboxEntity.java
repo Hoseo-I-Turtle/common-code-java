@@ -15,14 +15,15 @@ import org.hibernate.type.SqlTypes;
  */
 @Getter
 @MappedSuperclass
-public abstract class PolymorphicOutboxEntity<EVENT_TYPE, AGGREGATE_TYPE> extends OutboxEntity<EVENT_TYPE> {
+public abstract class PolymorphicOutboxEntity<EVENT_TYPE, AGGREGATE_TYPE, EVENT_ID>
+        extends OutboxEntity<EVENT_TYPE, EVENT_ID> {
 
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false, updatable = false)
     private AGGREGATE_TYPE aggregateType;
 
     /**
-     * aggregate 의 식별자. 숫자 / UUID 등 형식이 정해져 있지 않으므로 문자열로 둔다.
+     * aggregate 의 식별자. 여러 종류의 aggregate 키를 한 컬럼에 담으므로 문자열로 둔다.
      */
     @Column(nullable = false, updatable = false)
     private String aggregateId;
@@ -30,7 +31,7 @@ public abstract class PolymorphicOutboxEntity<EVENT_TYPE, AGGREGATE_TYPE> extend
     protected PolymorphicOutboxEntity() {
     }
 
-    protected PolymorphicOutboxEntity(String eventId, AGGREGATE_TYPE aggregateType, String aggregateId,
+    protected PolymorphicOutboxEntity(EVENT_ID eventId, AGGREGATE_TYPE aggregateType, String aggregateId,
                                       EVENT_TYPE eventType, String payload) {
         super(eventId, eventType, payload);
         this.aggregateType = aggregateType;
