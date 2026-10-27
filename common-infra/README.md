@@ -1,13 +1,13 @@
 # common-infra
 
-인프라(오브젝트 스토리지, Redis 등)를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
+인프라(오브젝트 스토리지, Redis, 메시지 큐 등)를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
 
 ## 규칙
 
 - 인프라마다 모듈을 나누지 않고 이 모듈 하나에 패키지로 나눈다 (`com.iturtle.infra.<인프라>`).
 - 인프라 SDK(AWS SDK 등)는 `compileOnly` 로 두어 서비스가 쓰는 인프라의 SDK 만 직접 추가한다.
   모든 서비스가 모든 SDK 를 받지 않도록 `implementation` / `api` 로 두지 않는다.
-  SDK 버전은 Spring Boot BOM 이 관리하지 않으므로 `gradle.properties` 에서 관리한다 (`awsSdkVersion`, `minioVersion`).
+  SDK 버전은 Spring Boot BOM 이 관리하지 않으므로 `gradle.properties` 에서 관리한다 (`awsSdkVersion`, `minioVersion`, `springCloudAwsVersion`).
 - 구현을 추가할 때 자동 설정은 인프라별로 클래스를 나누고 `@ConditionalOnClass`(SDK) + `@ConditionalOnProperty`
   (`iturtle.infra.<인프라>.*`) 로 켠다. 한 클래스에 모으면 SDK 가 없는 서비스에서 클래스 로딩이 깨진다.
   서비스가 같은 타입의 빈을 직접 등록하면 그것을 쓴다(`@ConditionalOnMissingBean`).
@@ -47,10 +47,31 @@
 - 실패 로그와 예외 메시지의 키는 마지막 `:` 뒤(식별자 자리)를 가린다 (`auth:attempt:1234` → `auth:attempt:****`).
   그래도 접두사에 개인정보 / 비밀값을 넣지 않는다 (식별자는 마지막 자리에 두거나 `HashUtils` 로 해시).
 
+### 메시지 큐 (SQS)
+
+- 접속과 `SqsAsyncClient` / `SqsTemplate` / 리스너 처리는 Spring Cloud AWS(`spring-cloud-aws-starter-sqs`, `spring.cloud.aws.*`)가 맡는다.
+  이 모듈은 클라이언트를 만들지 않고 발행 인터페이스, 리스너 팩토리, DLQ 읽기만 얹는다.
+- `iturtle.infra.message-queue.enabled=true`, `type=sqs` 이고 `SqsAsyncClient` 빈이 있으면 등록된다. 설정 예시는 `MessageQueueProperties` javadoc.
+- 큐 이름은 별칭으로 `iturtle.infra.message-queue.queues.<별칭>.name`(DLQ 를 읽으면 `.dead-letter-name` 도)에 적는다.
+  환경마다 다른 이름을 코드에 적지 않는다. 적은 큐와 DLQ 가 실제로 없으면 기동에 실패한다 (발행만 하는 큐의 오타도 잡힌다).
+  발행 / DLQ 읽기는 `MessageQueues.nameOf(별칭)` / `deadLetterNameOf(별칭)` 로 이름을 얻는다.
+- 리스너는 `@SqsListener(value = "${iturtle.infra.message-queue.queues.<별칭>.name}", factory = SqsListenerFactory.NAME)` 로 단다. 이 팩토리는 없는 큐면 기동에 실패하고
+  (기본 팩토리는 없는 큐를 조용히 만든다) 동시 처리 수를 맞춘다.
+- 큐 / DLQ / redrive 정책은 앱이 만들지 않는다 (콘솔 / IaC, 로컬은 ElasticMQ 설정). 실패한 메시지를 DLQ 로 옮기는 것도
+  redrive 정책대로 SQS 가 한다. 리스너가 예외를 던지면 메시지가 지워지지 않아 가시성 시간 뒤 다시 오고, `maxReceiveCount` 를 다 쓰면 DLQ 로 간다.
+  다시 받으면 안 되는 큐(외부 발송 등)는 `maxReceiveCount` 를 1 로 둔다.
+- DLQ 는 `SqsDeadLetterQueueClient` 로 읽기만 한다 (근사 건수 `countsOf`, 엿보기 `peek` 최대 10건).
+  원래 큐로 되돌리기 / 버리기는 콘솔(Start DLQ redrive, Purge)에서 한다.
+  - SQS 에는 정렬 / 건너뛰기가 없어 페이지 단위로 읽을 수 없다. 엿보기는 한 번 받기만 하고, 받는 메시지는 매번 일부만 뽑힌다.
+  - 받으면 숨겨지므로 곧바로 되돌린다. 되돌리지 못하면 `dead-letter.hold-timeout`(기본 30초) 뒤 다시 보인다. 받을 때마다 수신 횟수가 오른다.
+  발행 쪽도 없는 큐를 만들지 않게 하려면 `spring.cloud.aws.sqs.queue-not-found-strategy=fail`.
+- 도메인 변경과 함께 반드시 나가야 하는 이벤트는 `OutboxEntity`(common-jpa)에 저장하고 릴레이가 `MessageQueuePublisher` 로 올린다.
+
 ## 테스트
 
 - 자동 설정 / 장애 동작은 실제 서버 없이 테스트한다.
-- 실제 서버 테스트(`*ContainerTest`)는 Testcontainers 로 Redis(`redis:7.4.12-alpine`)와 S3 호환 서버(`adobe/s3mock`)를 띄운다.
+- 실제 서버 테스트(`*ContainerTest`)는 Testcontainers 로 Redis(`redis:7.4.12-alpine`), S3 호환 서버(`adobe/s3mock`),
+  SQS 호환 서버(`softwaremill/elasticmq-native`)를 띄운다.
   Docker 가 없으면 건너뛰므로 `./gradlew build` 는 Docker 없이도 통과한다. 돌리려면 Docker 를 켠다.
 - S3 / MinIO 구현 모두 S3Mock 으로 검증한다 (MinIO 공식 이미지는 공개 레지스트리에서 익명으로 받을 수 없다).
   S3Mock 은 서명을 검사하지 않으므로 presigned URL 의 서명 자체는 검증되지 않는다.
@@ -87,6 +108,24 @@
 | `RedisStore` | Redis 공용 창구 (get / set / setIfAbsent / multiGet / hasKey / delete(키 하나, 여러 키를 DEL 하나로), TTL 을 붙여 여러 키를 파이프라인으로 쓰는 `multiSet`(원자적이지 않음), `*OrThrow`, TTL 과 함께 원자적으로 증가하는 `incrementOrThrow`) |
 | `RedisUnavailableException` | Redis 응답 없음 (`BusinessException`, `CommonErrorCode.EXTERNAL_API_ERROR`). `*OrThrow` 만 던진다 |
 
+### `com.iturtle.infra.messagequeue`
+
+| 클래스 | 책임 |
+|---|---|
+| `MessageQueuePublisher` | 메시지 발행 (`send(queue, payload[, headers])`, 인터페이스) |
+| `MessageQueuePublishException` | 발행 실패 (`BusinessException`, `CommonErrorCode.EXTERNAL_API_ERROR`) |
+| `MessageQueueProperties` | `iturtle.infra.message-queue.*` 설정 (enabled, type, max-concurrent-messages, queues, dead-letter) |
+| `MessageQueues` | 별칭 → 큐 / DLQ 이름 (`nameOf`, `deadLetterNameOf`) |
+| `MessageQueueType` | 구현체 종류 (`SQS`) |
+
+### `com.iturtle.infra.messagequeue.sqs`
+
+| 클래스 | 책임 |
+|---|---|
+| `SqsMessageQueuePublisher` | `SqsTemplate` 으로 발행 |
+| `SqsListenerFactory` | 공통 리스너 팩토리 빈 이름 (`NAME`). 없는 큐는 기동 실패, 동시 처리 수 |
+| `SqsDeadLetterQueueClient` | DLQ 읽기 (근사 건수 `countsOf`, 엿보기 `peek` 최대 10건) |
+
 ### `com.iturtle.infra.autoconfigure`
 
 | 클래스 | 책임 |
@@ -96,3 +135,4 @@
 | `S3StorageConfigurations` / `MinioStorageConfigurations` | 클라이언트 빈이 있을 때(`ProvidedClient`)와 없을 때(`OwnClient`)의 설정. 이 순서로 가져온다 |
 | `StoragePropertiesChecks` | 필수 설정 / 클라이언트 설정 충돌 검사 |
 | `RedisStoreAutoConfiguration` | spring-data-redis 가 있고 `StringRedisTemplate` 빈이 있으며 `iturtle.infra.redis.enabled=true` 일 때 `RedisStore` 등록 (Boot 의 `RedisAutoConfiguration` 다음) |
+| `SqsMessageQueueAutoConfiguration` | Spring Cloud AWS SQS 가 있고 `type=sqs` 일 때 리스너 팩토리 / 발행 / DLQ 읽기 / `MessageQueues`(큐 존재 확인) 등록 (Spring Cloud AWS `SqsAutoConfiguration` 다음) |
