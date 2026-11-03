@@ -1,0 +1,3 @@
+com.iturtle.spring.webmvc.autoconfigure.CommonWebMvcAutoConfiguration
+com.iturtle.spring.webmvc.boot3.Boot3WebMvcAutoConfiguration
+com.iturtle.spring.webmvc.boot4.Boot4WebMvcAutoConfiguration

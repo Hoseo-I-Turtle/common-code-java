@@ -29,7 +29,8 @@ MVC / WebFlux 가 함께 쓰는 웹 공통 코드. `common-spring-core` 를 포�
 - MDC 키와 로그 필드 이름은 ECS 필드 이름을 따른다 (`http.request.method`, `url.path` 등).
 - 로그 레벨: 5xx 는 error(스택 트레이스 포함), 4xx 는 warn, 404 는 debug.
 - 로거 이름: 예외는 `com.iturtle.error`, 접근 로그는 `com.iturtle.access`, 외부 호출 로그는 `com.iturtle.client`.
-- `spring.http.client.connect-timeout`(3s), `read-timeout`(10s) 기본값을 가장 낮은 우선순위로 넣는다. 서비스 설정이 항상 우선한다.
+- `connect-timeout`(3s), `read-timeout`(10s) 기본값을 가장 낮은 우선순위로 넣는다. 서비스 설정이 항상 우선한다.
+  키는 Boot 3 가 `spring.http.client.*`, Boot 4 가 `spring.http.clients.*` 이며 둘 다 넣는다.
 
 ## 패키지 / 클래스
 
@@ -60,7 +61,7 @@ MVC / WebFlux 가 함께 쓰는 웹 공통 코드. `common-spring-core` 를 포�
 | 클래스 | 책임 |
 |---|---|
 | `ClientLogInterceptor` | RestClient 외부 호출 로그 한 줄 기록 |
-| `HttpClientDefaultsEnvironmentPostProcessor` | RestClient / RestTemplate 기본 타임아웃 지정 |
+| `HttpClientDefaultsListener` | RestClient / RestTemplate 기본 타임아웃 지정 |
 
 ### `com.iturtle.spring.web.logging`
 

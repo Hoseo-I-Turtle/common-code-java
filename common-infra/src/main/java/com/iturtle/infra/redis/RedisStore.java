@@ -2,13 +2,11 @@ package com.iturtle.infra.redis;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.connection.RedisStringCommands.SetOption;
-import org.springframework.data.redis.connection.StringRedisConnection;
-import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
-import org.springframework.data.redis.core.types.Expiration;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -132,12 +130,14 @@ public class RedisStore {
         if (values.isEmpty() || ttl.isZero() || ttl.isNegative()) {
             return;
         }
-        Expiration expiration = Expiration.from(ttl);
         try {
-            redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
-                StringRedisConnection strings = (StringRedisConnection) connection;
-                values.forEach((key, value) -> strings.set(key, value, expiration, SetOption.upsert()));
-                return null;
+            redisTemplate.executePipelined(new SessionCallback<Object>() {
+                @Override
+                public <K, V> Object execute(RedisOperations<K, V> operations) {
+                    // 파이프라인 안에서는 같은 스레드의 redisTemplate 호출이 파이프라인 커넥션을 쓴다
+                    values.forEach((key, value) -> redisTemplate.opsForValue().set(key, value, ttl));
+                    return null;
+                }
             });
         } catch (DataAccessException e) {
             warn("다중 쓰기", maskKeys(values.keySet()), e);

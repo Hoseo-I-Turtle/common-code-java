@@ -98,7 +98,7 @@ JPA 를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
 |---|---|
 | `SecurityAuditorAware` | 로그인 사용자 이름을 생성자 / 수정자 / 삭제자로 제공 (Spring Security 가 있을 때만 등록) |
 
-### `com.iturtle.jpa.autoconfigure`
+### `com.iturtle.jpa.autoconfigure` (`common-jpa-starter` 에 있음)
 
 | 클래스 | 책임 |
 |---|---|

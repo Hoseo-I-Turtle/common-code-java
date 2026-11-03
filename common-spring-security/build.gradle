@@ -1,18 +1,21 @@
-// Spring Security 공통 코드 (스택 무관). JWT 발급 / 검증
+// Security 공통 코드, 스택 무관 (JWT 발급 / 검증, 토큰 무효화 인터페이스). 빈 등록은 common-security-webmvc-starter 가 한다
 apply plugin: 'io.spring.dependency-management'
 
 dependencyManagement {
     imports {
+        // 버전만 맞춘다. 실제 버전은 서비스의 Spring Boot 를 따른다
         mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
     }
 }
 
 dependencies {
+    // 모듈
     api project(':common-spring-core')
-    // JWT 가 이 모듈의 주 기능이므로 compileOnly 가 아니라 api 로 전달한다
-    api "com.nimbusds:nimbus-jose-jwt:${nimbusJoseJwtVersion}"
+    api "com.nimbusds:nimbus-jose-jwt:${nimbusJoseJwtVersion}"   // JWT. 이 모듈의 주 기능이라 서비스에 전달한다
 
-    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    // 서비스가 제공 (compileOnly)
+    compileOnly 'org.springframework.boot:spring-boot'           // JwtProperties (@ConfigurationProperties)
 
+    // 테스트
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

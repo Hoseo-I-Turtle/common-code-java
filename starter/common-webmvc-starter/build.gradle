@@ -1,0 +1,63 @@
+// Spring MVC 서비스용 스타터. common-spring-webmvc 를 묶고 그 빈을 자동 설정으로 등록한다. Spring Boot starter 는 서비스가 직접 추가한다
+apply plugin: 'io.spring.dependency-management'
+
+// Boot 4 에서 패키지가 옮겨진 타입을 쓰는 코드(src/boot4)는 Boot 4 로 따로 컴파일해 같은 jar 에 넣는다.
+// 서비스의 Boot 버전에 맞는 자동 설정만 @ConditionalOnClass 로 켜진다
+sourceSets {
+    boot4 {
+        compileClasspath += sourceSets.main.output
+    }
+}
+
+dependencyManagement {
+    imports {
+        // 버전만 맞춘다. 실제 버전은 서비스의 Spring Boot 를 따른다
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+    }
+    // src/boot4 는 Boot 4 로 컴파일한다
+    boot4CompileOnly {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBoot4Version}"
+        }
+    }
+}
+
+dependencies {
+    // 모듈
+    api project(':common-spring-webmvc')
+
+    // 서비스가 제공 (compileOnly). src/main: 공통 + Boot 3 코드
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'   // 자동 설정, Boot 3 ErrorController / RestClientCustomizer
+    compileOnly 'org.springframework:spring-web'                       // RestClient 인터셉터
+    compileOnly 'jakarta.servlet:jakarta.servlet-api'                  // 필터 등록
+
+    // src/boot4: Boot 4 코드
+    boot4CompileOnly project(':common-spring-webmvc')
+    boot4CompileOnly 'org.springframework.boot:spring-boot-autoconfigure'   // 자동 설정
+    boot4CompileOnly 'org.springframework.boot:spring-boot-webmvc'          // Boot 4 ErrorController / ErrorAttributes
+    boot4CompileOnly 'org.springframework.boot:spring-boot-restclient'      // Boot 4 RestClientCustomizer
+    boot4CompileOnly 'org.springframework:spring-web'
+    boot4CompileOnly 'jakarta.servlet:jakarta.servlet-api'
+
+    // 테스트 (실제 Tomcat + 자동 설정)
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    if (isTestBoot4) {
+        testImplementation 'org.springframework.boot:spring-boot-starter-webmvc'
+        testImplementation 'org.springframework.boot:spring-boot-starter-restclient'
+    } else {
+        testImplementation 'org.springframework.boot:spring-boot-starter-web'
+    }
+    testImplementation 'org.springframework.boot:spring-boot-starter-validation'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+}
+
+// Boot 4 코드도 같은 jar / sources jar 에 넣는다
+jar {
+    from sourceSets.boot4.output
+}
+
+sourcesJar {
+    from sourceSets.boot4.allSource
+}
+
+sourceSets.test.runtimeClasspath += sourceSets.boot4.output

@@ -4,7 +4,6 @@ import com.iturtle.core.exception.CommonErrorCode;
 import com.iturtle.spring.web.dto.response.ApiBaseResponse;
 import com.iturtle.spring.web.dto.response.FieldErrorResponse;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -18,6 +17,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class MvcGlobalExceptionHandlerTest {
 
@@ -25,8 +26,11 @@ class MvcGlobalExceptionHandlerTest {
 
     @Test
     void noResourceFoundMappedTo404() {
-        assertError(handler.handleException(new NoResourceFoundException(HttpMethod.GET, "/unknown")),
-                CommonErrorCode.NOT_FOUND);
+        // 생성자가 Spring 6 과 7 에서 다르므로 mock 으로 만든다. 핸들러는 ErrorResponse 의 상태 코드만 본다
+        NoResourceFoundException exception = mock(NoResourceFoundException.class);
+        when(exception.getStatusCode()).thenReturn(HttpStatus.NOT_FOUND);
+
+        assertError(handler.handleException(exception), CommonErrorCode.NOT_FOUND);
     }
 
     @Test

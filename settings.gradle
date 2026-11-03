@@ -9,3 +9,10 @@ include 'common-spring-security'
 include 'common-spring-security-webmvc'
 include 'common-jpa'
 include 'common-infra'
+
+// 서비스가 추가하는 스타터. 위 모듈을 묶고 빈을 자동 설정으로 등록한다.
+// starter/ 폴더에 모아 두며, 프로젝트 이름(= 아티팩트 이름)은 폴더 위치와 무관하게 그대로다
+['common-webmvc-starter', 'common-security-webmvc-starter', 'common-jpa-starter', 'common-infra-starter'].each { name ->
+    include name
+    project(":${name}").projectDir = file("starter/${name}")
+}

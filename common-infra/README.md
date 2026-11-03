@@ -126,7 +126,7 @@
 | `SqsListenerFactory` | 공통 리스너 팩토리 빈 이름 (`NAME`). 없는 큐는 기동 실패, 동시 처리 수 |
 | `SqsDeadLetterQueueClient` | DLQ 읽기 (근사 건수 `countsOf`, 엿보기 `peek` 최대 10건) |
 
-### `com.iturtle.infra.autoconfigure`
+### `com.iturtle.infra.autoconfigure` (`common-infra-starter` 에 있음)
 
 | 클래스 | 책임 |
 |---|---|
@@ -134,5 +134,5 @@
 | `MinioStorageAutoConfiguration` | MinIO SDK 가 있고 `type=minio` 일 때 `MinioObjectStorage` 등록. MinioClient 빈이 없을 때만 `MinioClient` 를 만든다 |
 | `S3StorageConfigurations` / `MinioStorageConfigurations` | 클라이언트 빈이 있을 때(`ProvidedClient`)와 없을 때(`OwnClient`)의 설정. 이 순서로 가져온다 |
 | `StoragePropertiesChecks` | 필수 설정 / 클라이언트 설정 충돌 검사 |
-| `RedisStoreAutoConfiguration` | spring-data-redis 가 있고 `StringRedisTemplate` 빈이 있으며 `iturtle.infra.redis.enabled=true` 일 때 `RedisStore` 등록 (Boot 의 `RedisAutoConfiguration` 다음) |
+| `RedisStoreAutoConfiguration` | spring-data-redis 가 있고 `StringRedisTemplate` 빈이 있으며 `iturtle.infra.redis.enabled=true` 일 때 `RedisStore` 등록 (Boot 의 Redis 자동 설정 다음. Boot 3 `RedisAutoConfiguration`, Boot 4 `DataRedisAutoConfiguration`) |
 | `SqsMessageQueueAutoConfiguration` | Spring Cloud AWS SQS 가 있고 `type=sqs` 일 때 리스너 팩토리 / 발행 / DLQ 읽기 / `MessageQueues`(큐 존재 확인) 등록 (Spring Cloud AWS `SqsAutoConfiguration` 다음) |

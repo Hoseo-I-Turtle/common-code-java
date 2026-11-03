@@ -41,7 +41,7 @@
 | `InvalidJwtException` | 토큰 검증 실패 예외 |
 | `TokenBlacklist` | 토큰 무효화 저장소 인터페이스 (서비스가 구현) |
 
-### `com.iturtle.spring.security.autoconfigure`
+### `com.iturtle.spring.security.autoconfigure` (`common-security-webmvc-starter` 에 있음)
 
 | 클래스 | 책임 |
 |---|---|

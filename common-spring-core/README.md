@@ -10,6 +10,12 @@
 
 ## 패키지 / 클래스
 
+### `com.iturtle.spring.core.boot`
+
+| 클래스 | 책임 |
+|---|---|
+| `BootVersion` | 실행 중인 Spring Boot 의 메이저 버전(`major()`, `isBoot3()`, `isBoot4()`)을 알려준다. Boot 가 있는 애플리케이션에서만 사용 |
+
 ### `com.iturtle.spring.core.mdc`
 
 | 클래스 | 책임 |

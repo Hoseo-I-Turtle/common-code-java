@@ -1,0 +1,26 @@
+// JPA 를 쓰는 서비스용 스타터. common-jpa 를 묶고 그 빈(auditing 등)을 자동 설정으로 등록한다. Spring Boot starter 는 서비스가 직접 추가한다
+apply plugin: 'io.spring.dependency-management'
+
+dependencyManagement {
+    imports {
+        // 버전만 맞춘다. 실제 버전은 서비스의 Spring Boot 를 따른다
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+    }
+}
+
+dependencies {
+    // 모듈
+    api project(':common-jpa')
+
+    // 서비스가 제공 (compileOnly)
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'   // 자동 설정
+    compileOnly 'jakarta.persistence:jakarta.persistence-api'          // EntityManagerFactory 조건
+    compileOnly 'org.springframework.data:spring-data-jpa'             // @EnableJpaAuditing, AuditorAware
+    compileOnly 'org.springframework.security:spring-security-core'    // 로그인 사용자 auditor (선택)
+
+    // 테스트 (H2 + 실제 JPA)
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    testImplementation 'org.springframework.security:spring-security-core'
+    testRuntimeOnly 'com.h2database:h2'
+}

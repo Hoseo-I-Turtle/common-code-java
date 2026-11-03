@@ -7,17 +7,23 @@ import com.iturtle.spring.webmvc.logging.MdcFilter;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.web.servlet.error.DefaultErrorAttributes;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.ErrorResponseException;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.http.HttpStatus;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class MvcErrorControllerTest {
 
-    private final MvcErrorController controller = new MvcErrorController(new DefaultErrorAttributes());
+    private final MvcErrorController controller = new MvcErrorController() {
+        @Override
+        protected Throwable getError(WebRequest request) {
+            return (Throwable) request.getAttribute(RequestDispatcher.ERROR_EXCEPTION, RequestAttributes.SCOPE_REQUEST);
+        }
+    };
 
     @Test
     void sendErrorStatusMappedToCommonErrorCode() {

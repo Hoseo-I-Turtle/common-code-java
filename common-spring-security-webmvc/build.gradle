@@ -1,29 +1,28 @@
-// Spring Security (Servlet) 공통 코드 (Security 를 쓰는 MVC 서비스만 의존)
+// Security (Servlet) 공통 코드 (401 / 403 JSON, JWT 필터, 블랙리스트 필터). 빈 등록은 common-security-webmvc-starter 가 한다
 apply plugin: 'io.spring.dependency-management'
 
 dependencyManagement {
     imports {
+        // 버전만 맞춘다. 실제 버전은 서비스의 Spring Boot 를 따른다
         mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
     }
 }
 
 dependencies {
+    // 모듈
     api project(':common-spring-webmvc')
     api project(':common-spring-security')
 
-    compileOnly 'org.springframework.security:spring-security-web'
-    compileOnly 'org.springframework:spring-web'
-    compileOnly 'jakarta.servlet:jakarta.servlet-api'
-    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
-    compileOnly 'com.fasterxml.jackson.core:jackson-databind'
-    compileOnly 'org.slf4j:slf4j-api'
+    // 서비스가 제공 (compileOnly)
+    compileOnly 'org.springframework.security:spring-security-web'   // entry point, denied handler, 필터
+    compileOnly 'org.springframework:spring-web'                     // OncePerRequestFilter
+    compileOnly 'jakarta.servlet:jakarta.servlet-api'                // 서블릿 요청 / 응답
+    compileOnly 'org.slf4j:slf4j-api'                                // 로그
 
+    // 테스트
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-web'
     testImplementation 'org.springframework:spring-web'
     testImplementation 'jakarta.servlet:jakarta.servlet-api'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind'
-    // 통합 테스트(실제 Tomcat + 자동 설정 + Security 체인)
-    testImplementation 'org.springframework.boot:spring-boot-starter-web'
-    testImplementation 'org.springframework.boot:spring-boot-starter-security'
 }

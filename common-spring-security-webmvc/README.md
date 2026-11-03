@@ -45,12 +45,13 @@ Spring Security 를 쓰는 MVC 서비스용 모듈. Security 오류(401 / 403)�
 | `ApiAuthenticationEntryPoint` | 필터 단계 인증 실패 → 401 `C002` |
 | `ApiAccessDeniedHandler` | 필터 단계 권한 없음 → 403 `C003` |
 | `SecurityErrorResponseWriter` | 필터 단계 오류를 `ApiBaseResponse` JSON 으로 응답에 쓴다 (traceId 포함) |
+| `JsonBodyWriter` | JSON 쓰기 인터페이스. Boot 3 (Jackson 2) / Boot 4 (Jackson 3) 를 드러내지 않기 위해 둔다 |
 | `JwtAuthenticationFilter` | `Authorization: Bearer` 토큰을 지정한 토큰 종류로 검증하고, `sub` 로 조회한 `UserDetails` 를 SecurityContext 에 넣는다 |
 | `JwtBlacklistFilter` | `TokenBlacklist` 에서 무효화된 토큰이면 401 `J003` 으로 응답한다 |
 | `BearerTokens` | `Authorization: Bearer` 헤더에서 토큰을 꺼낸다 (JWT 필터 공용, 패키지 내부) |
 
-### `com.iturtle.spring.security.webmvc.autoconfigure`
+### `com.iturtle.spring.security.webmvc.autoconfigure` (`common-security-webmvc-starter` 에 있음)
 
 | 클래스 | 책임 |
 |---|---|
-| `CommonSecurityWebMvcAutoConfiguration` | `SecurityErrorResponseWriter`, entry point, denied handler 를 등록한다. 같은 타입의 빈을 등록하면 대체된다 |
+| `CommonSecurityWebMvcAutoConfiguration` | `JsonBodyWriter`(Jackson 3 이 있으면 Jackson 3, 없으면 Jackson 2), `SecurityErrorResponseWriter`, entry point, denied handler 를 등록한다. 같은 타입의 빈을 등록하면 대체된다 |

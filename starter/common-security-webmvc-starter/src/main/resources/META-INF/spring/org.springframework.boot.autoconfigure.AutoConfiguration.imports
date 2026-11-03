@@ -1,0 +1,2 @@
+com.iturtle.spring.security.autoconfigure.CommonSecurityAutoConfiguration
+com.iturtle.spring.security.webmvc.autoconfigure.CommonSecurityWebMvcAutoConfiguration

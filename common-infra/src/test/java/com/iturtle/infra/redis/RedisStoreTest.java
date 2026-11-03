@@ -10,13 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.RedisConnectionFailureException;
-import org.springframework.data.redis.connection.RedisStringCommands.SetOption;
-import org.springframework.data.redis.connection.StringRedisConnection;
-import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.script.RedisScript;
-import org.springframework.data.redis.core.types.Expiration;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -133,15 +130,14 @@ class RedisStoreTest {
         Map<String, String> entries = new LinkedHashMap<>();
         entries.put("a", "1");
         entries.put("b", "2");
-        ArgumentCaptor<RedisCallback<Object>> callback = ArgumentCaptor.forClass(RedisCallback.class);
+        ArgumentCaptor<SessionCallback<Object>> callback = ArgumentCaptor.forClass(SessionCallback.class);
 
         store.multiSet(entries, Duration.ofMinutes(1));
 
         verify(template).executePipelined(callback.capture());
-        StringRedisConnection connection = mock(StringRedisConnection.class);
-        callback.getValue().doInRedis(connection);
-        verify(connection).set("a", "1", Expiration.from(Duration.ofMinutes(1)), SetOption.upsert());
-        verify(connection).set("b", "2", Expiration.from(Duration.ofMinutes(1)), SetOption.upsert());
+        callback.getValue().execute(template);
+        verify(values).set("a", "1", Duration.ofMinutes(1));
+        verify(values).set("b", "2", Duration.ofMinutes(1));
     }
 
     @Test
@@ -149,9 +145,9 @@ class RedisStoreTest {
     void multiSetSkipsEmptyOrExpiredAndIgnoresFailure() {
         store.multiSet(Map.of(), Duration.ofMinutes(1));
         store.multiSet(Map.of("a", "1"), Duration.ZERO);
-        verify(template, never()).executePipelined(any(RedisCallback.class));
+        verify(template, never()).executePipelined(any(SessionCallback.class));
 
-        when(template.executePipelined(any(RedisCallback.class))).thenThrow(DOWN);
+        when(template.executePipelined(any(SessionCallback.class))).thenThrow(DOWN);
         store.multiSet(Map.of("a", "1"), Duration.ofMinutes(1));
     }
 

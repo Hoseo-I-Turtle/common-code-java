@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SecurityErrorResponseTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final SecurityErrorResponseWriter writer = new SecurityErrorResponseWriter(objectMapper);
+    private final SecurityErrorResponseWriter writer = new SecurityErrorResponseWriter(objectMapper::writeValue);
 
     @AfterEach
     void tearDown() {

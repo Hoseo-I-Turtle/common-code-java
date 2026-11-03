@@ -25,7 +25,7 @@ class JwtBlacklistFilterTest {
     private final JwtProvider jwtProvider = new JwtProvider("access", settings(), Duration.ofSeconds(30), Clock.systemUTC());
     private final InMemoryBlacklist blacklist = new InMemoryBlacklist();
     private final JwtBlacklistFilter filter =
-            new JwtBlacklistFilter(jwtProvider, blacklist, new SecurityErrorResponseWriter(objectMapper));
+            new JwtBlacklistFilter(jwtProvider, blacklist, new SecurityErrorResponseWriter(objectMapper::writeValue));
 
     @Test
     void revokedTokenRespondsJ003() throws Exception {

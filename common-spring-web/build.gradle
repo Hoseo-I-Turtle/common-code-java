@@ -1,27 +1,27 @@
-// Spring Web 공통 코드
+// 웹 공통 코드, 스택 무관 (응답 DTO, 예외 처리 기반, 접근 로그, 외부 호출, 검증)
 apply plugin: 'io.spring.dependency-management'
 
 dependencyManagement {
     imports {
+        // 버전만 맞춘다. 실제 버전은 서비스의 Spring Boot 를 따른다
         mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
     }
 }
 
 dependencies {
+    // 모듈
     api project(':common-spring-core')
 
-    compileOnly 'org.springframework:spring-web'
-    compileOnly 'org.springframework.boot:spring-boot'
-    compileOnly 'org.slf4j:slf4j-api'
-    // 검증 어노테이션 / ConstraintViolationException 처리. 없는 서비스에서도 동작하도록 compileOnly
-    compileOnly 'jakarta.validation:jakarta.validation-api'
-    // PageResponse.from(Page) 에서만 사용
-    compileOnly 'org.springframework.data:spring-data-commons'
-    // 컨트롤러 안의 Security 예외(@PreAuthorize 거부 등) 판단에서만 사용
-    compileOnly 'org.springframework.security:spring-security-core'
-    // ErrorResponse 의 @JsonInclude. Jackson 이 없으면 어노테이션은 무시된다
-    compileOnly 'com.fasterxml.jackson.core:jackson-annotations'
+    // 서비스가 제공 (compileOnly)
+    compileOnly 'org.springframework:spring-web'                      // 예외 처리, RestClient 로그
+    compileOnly 'org.springframework.boot:spring-boot'                // @ConfigurationProperties, 타임아웃 기본값 리스너
+    compileOnly 'org.slf4j:slf4j-api'                                 // 로그
+    compileOnly 'jakarta.validation:jakarta.validation-api'           // 검증 어노테이션 / ConstraintViolationException 처리 (선택)
+    compileOnly 'org.springframework.data:spring-data-commons'        // PageResponse.from(Page) (선택)
+    compileOnly 'org.springframework.security:spring-security-core'   // 컨트롤러 안 Security 예외 판단 (선택)
+    compileOnly 'com.fasterxml.jackson.core:jackson-annotations'      // ErrorResponse 의 @JsonInclude. 없으면 무시된다
 
+    // 테스트
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-validation'
     testImplementation 'org.springframework.data:spring-data-commons'

@@ -1,6 +1,5 @@
 package com.iturtle.spring.security.webmvc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iturtle.core.exception.ErrorCode;
 import com.iturtle.spring.security.jwt.JwtErrorCode;
 import com.iturtle.spring.web.dto.response.ApiBaseResponse;
@@ -20,10 +19,10 @@ import java.nio.charset.StandardCharsets;
 @Slf4j(topic = "com.iturtle.error")
 public class SecurityErrorResponseWriter {
 
-    private final ObjectMapper objectMapper;
+    private final JsonBodyWriter jsonBodyWriter;
 
-    public SecurityErrorResponseWriter(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public SecurityErrorResponseWriter(JsonBodyWriter jsonBodyWriter) {
+        this.jsonBodyWriter = jsonBodyWriter;
     }
 
     public void write(HttpServletResponse response, ErrorCode errorCode, Exception e) throws IOException {
@@ -40,6 +39,6 @@ public class SecurityErrorResponseWriter {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         ApiBaseResponse<Void> body = ApiBaseResponse.fail(new ErrorResponse(errorCode, null, MDC.get(WebMdcKeys.TRACE_ID)));
-        objectMapper.writeValue(response.getOutputStream(), body);
+        jsonBodyWriter.write(response.getOutputStream(), body);
     }
 }

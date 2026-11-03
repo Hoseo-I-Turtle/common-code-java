@@ -1,25 +1,26 @@
-// Spring Web MVC (Servlet) 공통 코드
+// Spring MVC (Servlet) 공통 코드 (전역 예외 핸들러, /error, MDC / 접근 로그 필터). 빈 등록은 common-webmvc-starter 가 한다
 apply plugin: 'io.spring.dependency-management'
 
 dependencyManagement {
     imports {
+        // 버전만 맞춘다. 실제 버전은 서비스의 Spring Boot 를 따른다
         mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
     }
 }
 
 dependencies {
+    // 모듈
     api project(':common-spring-web')
 
-    compileOnly 'org.springframework:spring-web'
-    compileOnly 'jakarta.servlet:jakarta.servlet-api'
-    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
-    compileOnly 'org.slf4j:slf4j-api'
+    // 서비스가 제공 (compileOnly)
+    compileOnly 'org.springframework:spring-web'          // 예외 핸들러, 필터
+    compileOnly 'org.springframework:spring-context'      // EnvironmentAware(필터), BindingResult(검증 오류)
+    compileOnly 'jakarta.servlet:jakarta.servlet-api'     // 서블릿 필터 / 요청
+    compileOnly 'org.slf4j:slf4j-api'                     // 로그
 
+    // 테스트
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework:spring-web'
     testImplementation 'org.springframework:spring-webmvc'
-    // 통합 테스트(실제 Tomcat + 자동 설정)
-    testImplementation 'org.springframework.boot:spring-boot-starter-web'
-    testImplementation 'org.springframework.boot:spring-boot-starter-validation'
     testImplementation 'jakarta.servlet:jakarta.servlet-api'
 }

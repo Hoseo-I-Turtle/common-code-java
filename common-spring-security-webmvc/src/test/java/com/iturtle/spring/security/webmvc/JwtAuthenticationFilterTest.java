@@ -45,7 +45,7 @@ class JwtAuthenticationFilterTest {
     };
 
     private final JwtAuthenticationFilter filter =
-            new JwtAuthenticationFilter(jwtProvider, new SecurityErrorResponseWriter(objectMapper), userDetailsService);
+            new JwtAuthenticationFilter(jwtProvider, new SecurityErrorResponseWriter(objectMapper::writeValue), userDetailsService);
 
     @AfterEach
     void tearDown() {
