@@ -54,7 +54,7 @@ starter/common-*-starter             서비스가 추가하는 스타터. 위 �
 | 인프라 사용 | 위 스타터 + `common-infra-starter` | 쓰는 인프라의 SDK (예: AWS SDK S3, `spring-boot-starter-data-redis`, `spring-cloud-aws-starter-sqs`) |
 
 ```gradle
-implementation 'com.iturtle:common-security-webmvc-starter:1.0-SNAPSHOT'
+implementation 'com.github.Hoseo-I-Turtle.common-code-java:common-security-webmvc-starter:v0.0.4'
 implementation 'org.springframework.boot:spring-boot-starter-web'
 implementation 'org.springframework.boot:spring-boot-starter-security'
 ```
@@ -79,6 +79,51 @@ implementation 'org.springframework.boot:spring-boot-starter-security'
 - **자동 설정**: 빈 등록은 스타터(`common-*-starter`)의 자동 설정만 한다. 모듈은 빈을 등록하지 않으므로 스타터 없이 모듈만 추가하면
   직접 빈으로 만들어 쓴다. 같은 타입 / 이름의 빈을 등록하면 대체된다. Security 필터처럼 조립이 필요한 것은 서비스가 직접 만든다.
 - **선택 의존성**: `compileOnly` 로 두고, 해당 타입을 쓰는 코드는 분리해 라이브러리가 없어도 동작하게 한다.
+
+## JitPack 배포 및 사용
+
+GitHub 저장소는 `Hoseo-I-Turtle/common-code-java`이며, 아래 배포 태그는 `v0.0.4`다.
+해당 태그의 JitPack 빌드가 성공한 뒤 사용할 수 있다.
+
+사용하는 서비스의 `build.gradle`에 저장소를 추가한다. 저장소를 `settings.gradle`에서 관리한다면
+그 파일의 `dependencyResolutionManagement.repositories`에 같은 설정을 넣는다.
+
+```gradle
+repositories {
+    mavenCentral()
+    maven {
+        url = uri('https://jitpack.io')
+        content {
+            includeGroup 'com.github.Hoseo-I-Turtle.common-code-java'
+        }
+    }
+}
+```
+
+의존성 좌표는 `com.github.Hoseo-I-Turtle.common-code-java:<모듈 이름>:<태그>`다.
+위 표에서 필요한 스타터만 추가하면 하위 모듈은 전이 의존성으로 함께 가져온다.
+Spring Boot starter와 선택 기능의 SDK는 서비스가 직접 추가한다.
+
+배포 순서:
+
+1. 변경 사항과 `jitpack.yml`을 커밋하고 GitHub에 push한다.
+2. 배포할 커밋에 태그를 만들고 push한다.
+
+   ```bash
+   git tag v0.0.4
+   git push origin v0.0.4
+   ```
+
+3. [JitPack 프로젝트 페이지](https://jitpack.io/#Hoseo-I-Turtle/common-code-java)에서
+   해당 태그를 조회하고 `Get it`으로 빌드를 요청한다. 첫 의존성 요청으로도 빌드가 시작된다.
+4. 빌드 성공과 모듈 목록을 확인한 뒤 서비스에 해당 태그 버전을 적용한다.
+
+`jitpack.yml`은 JDK 21과 Gradle Wrapper로 테스트를 포함한 빌드 및 Maven 로컬 게시를 실행한다.
+JitPack 환경에서는 모든 모듈의 group/version을 JitPack 좌표와 태그에 맞춰
+게시된 POM의 모듈 간 의존성도 같은 좌표를 사용하게 한다. 로컬 게시 좌표는 기존
+`com.iturtle:<모듈 이름>:1.0-SNAPSHOT`을 유지한다.
+컨테이너 테스트는 Docker가 없는 환경에서는 건너뛴다. 배포 전 Docker 환경에서 별도로 검증한다.
+이미 배포한 태그를 이동하지 않고 변경할 때마다 새 태그를 만든다.
 
 ## 빌드
 
