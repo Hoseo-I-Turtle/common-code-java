@@ -29,8 +29,14 @@
     `secret-key` 를 적으면 시작에 실패한다. S3Client 를 직접 등록하면 S3Presigner 도 등록한다.
   - 없으면 `iturtle.infra.storage` 설정으로 만든다. S3 자동 설정은 Spring Cloud AWS 자동 설정 다음에 실행되어
     그쪽 빈을 먼저 본다.
-- `type=s3` 로 S3 호환 저장소(MinIO, Ceph 등)에 `endpoint` 를 지정해 붙을 때는 `path-style-access=true` 로 둔다.
+- `type=s3` 로 S3 호환 저장소(Garage, MinIO, Ceph 등)에 `endpoint` 를 지정해 붙을 때는 `path-style-access=true` 로 둔다.
   기본(가상 호스트 방식)은 `버킷.host` 주소를 만들어 대개 풀리지 않는다.
+- `endpoint` 를 지정하면 라이브러리가 만드는 `S3Client` 는 요청 체크섬을 **API 가 요구할 때만** 보낸다 (`WHEN_REQUIRED`).
+  AWS SDK 2.30 부터 기본으로 붙는 끝 체크섬(aws-chunked)을 Garage · SeaweedFS 등이 받지 못해 업로드가 실패하기 때문이다.
+  `S3Client` 를 직접 등록하는 서비스는 같은 설정(`requestChecksumCalculation` / `responseChecksumValidation`)을 직접 한다.
+- 검증한 S3 호환 서버 (2026-11, 서명 주소 · 서명 위조 거절 · 나눠 올리기 · `response-content-disposition` · 범위 받기):
+  **Garage** 모두 지원 (`GarageObjectStorageContainerTest`). RustFS 모두 지원. SeaweedFS 는 `response-content-disposition` 을 무시한다.
+  MinIO 커뮤니티판은 2025-10 부터 Docker 이미지를 배포하지 않는다.
 - 필수 설정이 없거나 충돌하면 애플리케이션 시작 시 `InvalidConfigurationException`(common-core)으로 실패한다.
 - 모든 실패는 `StorageException`(`BusinessException`, `C010` 502)으로 던진다. 호출한 쪽은 인프라와 무관하게 이것만 잡고,
   잡지 않으면 전역 예외 핸들러가 502 로 응답한다.
@@ -86,7 +92,7 @@
   SQS 호환 서버(`softwaremill/elasticmq-native`)를 띄운다.
   Docker 가 없으면 건너뛰므로 `./gradlew build` 는 Docker 없이도 통과한다. 돌리려면 Docker 를 켠다.
 - S3 / MinIO 구현 모두 S3Mock 으로 검증한다 (MinIO 공식 이미지는 공개 레지스트리에서 익명으로 받을 수 없다).
-  S3Mock 은 서명을 검사하지 않으므로 presigned URL 의 서명 자체는 검증되지 않는다.
+  S3Mock 은 서명을 검사하지 않으므로, presigned URL 의 서명과 S3 호환 서버 동작은 Garage(`dxflrs/garage`)로 따로 검증한다.
 
 ## 패키지 / 클래스
 

@@ -54,7 +54,7 @@ starter/common-*-starter             서비스가 추가하는 스타터. 위 �
 | 인프라 사용 | 위 스타터 + `common-infra-starter` | 쓰는 인프라의 SDK (예: AWS SDK S3, `spring-boot-starter-data-redis`, `spring-cloud-aws-starter-sqs`) |
 
 ```gradle
-implementation 'com.github.Hoseo-I-Turtle.common-code-java:common-security-webmvc-starter:v0.0.5'
+implementation 'com.github.Hoseo-I-Turtle.common-code-java:common-security-webmvc-starter:v0.0.6'
 implementation 'org.springframework.boot:spring-boot-starter-web'
 implementation 'org.springframework.boot:spring-boot-starter-security'
 ```
@@ -82,7 +82,7 @@ implementation 'org.springframework.boot:spring-boot-starter-security'
 
 ## JitPack 배포 및 사용
 
-GitHub 저장소는 `Hoseo-I-Turtle/common-code-java`이며, 아래 배포 태그는 `v0.0.5`다.
+GitHub 저장소는 `Hoseo-I-Turtle/common-code-java`이며, 아래 배포 태그는 `v0.0.6`다.
 해당 태그의 JitPack 빌드가 성공한 뒤 사용할 수 있다.
 
 사용하는 서비스의 `build.gradle`에 저장소를 추가한다. 저장소를 `settings.gradle`에서 관리한다면
@@ -110,8 +110,8 @@ Spring Boot starter와 선택 기능의 SDK는 서비스가 직접 추가한다.
 2. 배포할 커밋에 태그를 만들고 push한다.
 
    ```bash
-   git tag v0.0.5
-   git push origin v0.0.5
+   git tag v0.0.6
+   git push origin v0.0.6
    ```
 
 3. [JitPack 프로젝트 페이지](https://jitpack.io/#Hoseo-I-Turtle/common-code-java)에서

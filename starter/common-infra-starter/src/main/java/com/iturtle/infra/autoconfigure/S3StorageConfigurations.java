@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
+import software.amazon.awssdk.core.checksums.ResponseChecksumValidation;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
@@ -67,6 +69,7 @@ final class S3StorageConfigurations {
             }
             if (StringUtils.hasText(properties.getEndpoint())) {
                 builder.endpointOverride(URI.create(properties.getEndpoint()));
+                checksumsOnlyWhenRequired(builder);
             }
             if (StringUtils.hasText(properties.getAccessKey())) {
                 builder.credentialsProvider(credentials(properties));
@@ -100,6 +103,20 @@ final class S3StorageConfigurations {
         @ConditionalOnMissingBean
         ObjectStorage objectStorage(S3Client client, S3Presigner presigner, StorageProperties properties) {
             return new S3ObjectStorage(client, presigner, StoragePropertiesChecks.required(properties.getBucket(), "bucket"));
+        }
+
+        /**
+         * S3 호환 저장소(Garage, SeaweedFS 등)는 AWS SDK 2.30 부터 기본으로 붙는 요청 체크섬(aws-chunked 끝 체크섬)을 받지 못해
+         * 업로드가 실패한다. 엔드포인트를 지정했으면 체크섬은 API 가 요구할 때만 보내고, 응답 체크섬도 그때만 검사한다.
+         * 2.30 보다 오래된 SDK 는 이 설정이 없고 원래 체크섬을 보내지 않으므로 건너뛴다.
+         */
+        static void checksumsOnlyWhenRequired(S3ClientBuilder builder) {
+            try {
+                builder.requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED);
+                builder.responseChecksumValidation(ResponseChecksumValidation.WHEN_REQUIRED);
+            } catch (NoSuchMethodError | NoClassDefFoundError e) {
+                // AWS SDK 2.30 미만
+            }
         }
 
         private static StaticCredentialsProvider credentials(StorageProperties properties) {
