@@ -8,7 +8,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Import;
 
 /**
- * iturtle.infra.storage.enabled=true, type=s3 이고 AWS SDK(S3)가 있을 때 S3ObjectStorage 를 등록한다.
+ * iturtle.infra.storage.enabled=true, type=s3 또는 garage 이고 AWS SDK(S3)가 있을 때 S3ObjectStorage 를 등록한다.
+ * type=garage 는 클라이언트를 빈으로 등록하지 않고 안에서 만든다 ({@code S3StorageConfigurations.Garage}).
  * <p>
  * 클라이언트 설정은 한 곳에서만 한다.
  * <ul>
@@ -22,6 +23,7 @@ import org.springframework.context.annotation.Import;
 @ConditionalOnClass(name = "software.amazon.awssdk.services.s3.S3Client")
 @ConditionalOnProperty(prefix = "iturtle.infra.storage", name = "enabled", havingValue = "true")
 @EnableConfigurationProperties(StorageProperties.class)
-@Import({S3StorageConfigurations.ProvidedClient.class, S3StorageConfigurations.OwnClient.class})
+@Import({S3StorageConfigurations.ProvidedClient.class, S3StorageConfigurations.OwnClient.class,
+        S3StorageConfigurations.Garage.class})
 public class S3StorageAutoConfiguration {
 }

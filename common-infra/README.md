@@ -21,8 +21,11 @@
   | type | 서비스가 추가할 SDK | 구현 | 필수 설정 |
   |---|---|---|---|
   | `s3` | `software.amazon.awssdk:s3` | `S3ObjectStorage` | `bucket` (region / 자격 증명은 비우면 AWS 기본 설정) |
-  | `minio` | `io.minio:minio` | `MinioObjectStorage` | `bucket`, `endpoint`, `access-key`, `secret-key` |
+  | `garage` | `software.amazon.awssdk:s3` | `S3ObjectStorage` | `bucket`, `endpoint`, `access-key`, `secret-key` (region 은 비우면 `garage`, path-style · 체크섬은 자동) |
+  | `minio` | `io.minio:minio` | `MinioObjectStorage` | `bucket`, `endpoint`, `access-key`, `secret-key`. **새로 쓰지 않는다** (MinIO 커뮤니티 이미지 배포 중단, 나눠 올리기 미지원). MinIO 서버도 `s3` 로 붙을 수 있다 |
 
+- `type=garage` 는 S3Client / S3Presigner 를 **빈으로 등록하지 않고** 안에서 만든다 (AWS S3 용 Spring Cloud AWS 클라이언트와 함께 쓸 수 있게).
+  그래서 아래 "클라이언트 빈이 이미 있으면" 규칙은 `s3` · `minio` 에만 적용된다.
 - 클라이언트(S3Client / MinioClient) 설정은 한 곳에서만 한다. 계정이 여러 개일 수 있으므로 두 설정을 합치지 않는다.
   - 클라이언트 빈이 이미 있으면(Spring Cloud AWS `spring.cloud.aws.*`, 서비스 직접 등록) 그것을 쓴다.
     이때 `iturtle.infra.storage` 에는 `enabled`, `type`, `bucket` 만 적는다. `region` / `endpoint` / `access-key` /
@@ -50,7 +53,7 @@
     `completeMultipartUpload`. 마지막이 아닌 조각은 5MB 이상이다. 브라우저가 ETag 를 읽으려면 버킷 CORS 의 ExposeHeaders 에 `ETag` 를 넣는다.
     끝나지 않은 세션은 조각이 남으므로 `abortMultipartUpload` 하는 정리나 버킷 수명 주기 규칙(`AbortIncompleteMultipartUpload`)을 둔다.
   - **나눠 올리기는 `S3ObjectStorage` 만 지원한다** (`supportsMultipartUpload()`). MinIO SDK 는 조각별 서명 주소를 공개 API 로 주지 않는다.
-    MinIO 서버에서 나눠 올리기가 필요하면 `type=s3` + `endpoint` + `path-style-access=true` 로 쓴다.
+    Garage 는 `type=garage`, 그 밖의 S3 호환 서버(MinIO 포함)는 `type=s3` + `endpoint` + `path-style-access=true` 로 쓴다.
   - `ObjectStorage` 의 v0.0.5 메서드(`createDownloadUrl(…, DownloadOptions)`, `stat`, `downloadRange`, 나눠 올리기)는 기본 구현이
     `UnsupportedOperationException` 이다. 직접 구현체를 둔 서비스도 컴파일이 깨지지 않는다.
 
@@ -102,7 +105,7 @@
 |---|---|
 | `ObjectStorage` | 파일 업로드 / 다운로드 / 삭제 / 존재 확인, presigned 업로드 / 다운로드 URL 생성, 받을 이름 · 열기 방식을 정한 다운로드 URL, 객체 정보(`stat`), 범위 받기(`downloadRange`), 나눠 올리기(시작 · 조각 URL · 완료 · 취소) (인터페이스) |
 | `StorageProperties` | `iturtle.infra.storage.*` 설정 (enabled, type, bucket, region, endpoint, access-key, secret-key, path-style-access) |
-| `StorageType` | 구현체 종류 (`S3`, `MINIO`) |
+| `StorageType` | 구현체 종류 (`S3`, `GARAGE`, `MINIO`(새로 쓰지 않음)) |
 | `StorageException` | 스토리지 요청 실패 (`BusinessException`, `CommonErrorCode.EXTERNAL_API_ERROR`). 구현체가 SDK 예외를 감싼다 |
 
 ### `com.iturtle.infra.objectstorage.dto`
@@ -152,7 +155,7 @@
 
 | 클래스 | 책임 |
 |---|---|
-| `S3StorageAutoConfiguration` | AWS SDK 가 있고 `type=s3` 일 때 `S3ObjectStorage` 등록. S3Client 빈이 없을 때만 `S3Client` / `S3Presigner` 를 만든다 |
+| `S3StorageAutoConfiguration` | AWS SDK 가 있고 `type=s3` 일 때 `S3ObjectStorage` 등록. S3Client 빈이 없을 때만 `S3Client` / `S3Presigner` 를 만든다. `type=garage` 면 클라이언트를 빈 없이 안에서 만들어 `S3ObjectStorage` 를 등록한다 |
 | `MinioStorageAutoConfiguration` | MinIO SDK 가 있고 `type=minio` 일 때 `MinioObjectStorage` 등록. MinioClient 빈이 없을 때만 `MinioClient` 를 만든다 |
 | `S3StorageConfigurations` / `MinioStorageConfigurations` | 클라이언트 빈이 있을 때(`ProvidedClient`)와 없을 때(`OwnClient`)의 설정. 이 순서로 가져온다 |
 | `StoragePropertiesChecks` | 필수 설정 / 클라이언트 설정 충돌 검사 |

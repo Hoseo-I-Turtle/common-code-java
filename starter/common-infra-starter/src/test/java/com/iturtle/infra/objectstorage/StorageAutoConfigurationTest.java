@@ -54,6 +54,80 @@ class StorageAutoConfigurationTest {
     }
 
     @Test
+    void garage() {
+        runner.withPropertyValues(
+                        "iturtle.infra.storage.enabled=true",
+                        "iturtle.infra.storage.type=garage",
+                        "iturtle.infra.storage.bucket=iturtle-files",
+                        "iturtle.infra.storage.endpoint=http://garage:3900",
+                        "iturtle.infra.storage.access-key=GKak",
+                        "iturtle.infra.storage.secret-key=sk")
+                .run(context -> {
+                    assertThat(context).getBean(ObjectStorage.class).isInstanceOf(S3ObjectStorage.class);
+                    assertThat(context.getBean(ObjectStorage.class).supportsMultipartUpload()).isTrue();
+                    // 클라이언트를 빈으로 두지 않는다 (Spring Cloud AWS 의 S3Client 자동 설정을 끄지 않게)
+                    assertThat(context).doesNotHaveBean(S3Client.class);
+                    assertThat(context).doesNotHaveBean(S3Presigner.class);
+                    assertThat(context).doesNotHaveBean(MinioClient.class);
+
+                    // path-style 주소, region 기본값 garage
+                    String url = context.getBean(ObjectStorage.class)
+                            .createDownloadUrl("a/b.png", Duration.ofMinutes(5)).toString();
+                    assertThat(url).startsWith("http://garage:3900/iturtle-files/a/b.png?");
+                    assertThat(url).contains("%2Fgarage%2Fs3%2Faws4_request");
+                });
+    }
+
+    @Test
+    void garageRegionOverride() {
+        runner.withPropertyValues(
+                        "iturtle.infra.storage.enabled=true",
+                        "iturtle.infra.storage.type=garage",
+                        "iturtle.infra.storage.bucket=b",
+                        "iturtle.infra.storage.region=lab",
+                        "iturtle.infra.storage.endpoint=http://garage:3900",
+                        "iturtle.infra.storage.access-key=GKak",
+                        "iturtle.infra.storage.secret-key=sk")
+                .run(context -> assertThat(context.getBean(ObjectStorage.class)
+                        .createDownloadUrl("k", Duration.ofMinutes(1)).toString()).contains("%2Flab%2Fs3%2Faws4_request"));
+    }
+
+    @Test
+    void garageRequiresEndpointAndKeys() {
+        String[] base = {
+                "iturtle.infra.storage.enabled=true",
+                "iturtle.infra.storage.type=garage",
+                "iturtle.infra.storage.bucket=b"};
+        runner.withPropertyValues(base)
+                .withPropertyValues("iturtle.infra.storage.access-key=GKak", "iturtle.infra.storage.secret-key=sk")
+                .run(context -> assertThat(context).hasFailed()
+                        .getFailure().rootCause().isInstanceOf(InvalidConfigurationException.class)
+                        .hasMessageContaining("endpoint"));
+        runner.withPropertyValues(base)
+                .withPropertyValues("iturtle.infra.storage.endpoint=http://garage:3900")
+                .run(context -> assertThat(context).hasFailed()
+                        .getFailure().rootCause().isInstanceOf(InvalidConfigurationException.class)
+                        .hasMessageContaining("access-key"));
+    }
+
+    @Test
+    void garageDoesNotDisableServiceS3Client() {
+        // AWS S3 용 S3Client 빈이 따로 있어도 Garage 저장소는 자기 클라이언트로 만든다
+        runner.withBean(S3Client.class, () -> mock(S3Client.class))
+                .withPropertyValues(
+                        "iturtle.infra.storage.enabled=true",
+                        "iturtle.infra.storage.type=garage",
+                        "iturtle.infra.storage.bucket=b",
+                        "iturtle.infra.storage.endpoint=http://garage:3900",
+                        "iturtle.infra.storage.access-key=GKak",
+                        "iturtle.infra.storage.secret-key=sk")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(ObjectStorage.class);
+                    assertThat(context).hasSingleBean(S3Client.class);
+                });
+    }
+
+    @Test
     void s3PathStyleAccess() {
         String[] properties = {
                 "iturtle.infra.storage.enabled=true",

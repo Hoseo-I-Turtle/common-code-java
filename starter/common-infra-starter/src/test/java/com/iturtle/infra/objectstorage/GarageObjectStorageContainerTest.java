@@ -32,7 +32,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 실제 S3 호환 서버 Garage 에서 S3ObjectStorage 를 자동 설정 그대로 검증한다. Docker 가 없으면 건너뛴다.
+ * 실제 Garage 에서 type=garage 자동 설정(S3ObjectStorage)을 그대로 검증한다. Docker 가 없으면 건너뛴다.
  * <p>
  * S3Mock 과 달리 Garage 는 서명을 검사하므로 presigned URL 의 서명(위조 거절)까지 확인된다. 최신 AWS SDK 의 기본 요청 체크섬을
  * 받지 못하는 서버라, 엔드포인트를 지정하면 체크섬을 필요할 때만 보내는 설정이 실제로 동작하는지도 함께 확인한다.
@@ -70,13 +70,12 @@ class GarageObjectStorageContainerTest {
             .withConfiguration(AutoConfigurations.of(S3StorageAutoConfiguration.class, MinioStorageAutoConfiguration.class))
             .withPropertyValues(
                     "iturtle.infra.storage.enabled=true",
-                    "iturtle.infra.storage.type=s3",
+                    // type=garage: region · path-style · 체크섬은 자동
+                    "iturtle.infra.storage.type=garage",
                     "iturtle.infra.storage.bucket=" + BUCKET,
-                    "iturtle.infra.storage.region=garage",
                     "iturtle.infra.storage.endpoint=http://" + GARAGE.getHost() + ":" + GARAGE.getMappedPort(3900),
                     "iturtle.infra.storage.access-key=" + ACCESS_KEY,
-                    "iturtle.infra.storage.secret-key=" + SECRET_KEY,
-                    "iturtle.infra.storage.path-style-access=true");
+                    "iturtle.infra.storage.secret-key=" + SECRET_KEY);
 
     @BeforeAll
     static void initGarage() throws Exception {

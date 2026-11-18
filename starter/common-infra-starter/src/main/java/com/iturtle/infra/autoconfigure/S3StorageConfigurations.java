@@ -124,4 +124,67 @@ final class S3StorageConfigurations {
             return StaticCredentialsProvider.create(AwsBasicCredentials.create(properties.getAccessKey(), secretKey));
         }
     }
+
+    /**
+     * type=garage: Garage(S3 호환 자체 호스팅 저장소)용 S3Client / S3Presigner 를 <b>빈으로 등록하지 않고</b> 안에서 만든다.
+     * 빈으로 등록하면 Spring Cloud AWS 의 S3Client 자동 설정(AWS S3 용)이 꺼지기 때문이다. 클라이언트는 ObjectStorage 빈이
+     * 닫힐 때 함께 닫힌다.
+     * <ul>
+     *     <li>endpoint · access-key · secret-key · bucket 필수</li>
+     *     <li>region 을 비우면 {@code garage} (Garage 기본 s3_region)</li>
+     *     <li>path-style 주소, 요청 · 응답 체크섬은 필요할 때만 (Garage 는 AWS SDK 기본 끝 체크섬을 받지 못함)</li>
+     * </ul>
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnProperty(prefix = "iturtle.infra.storage", name = "type", havingValue = "garage")
+    static class Garage {
+
+        static final String DEFAULT_REGION = "garage";
+
+        @Bean
+        @ConditionalOnMissingBean
+        ObjectStorage objectStorage(StorageProperties properties) {
+            URI endpoint = URI.create(StoragePropertiesChecks.required(properties.getEndpoint(), "endpoint"));
+            String bucket = StoragePropertiesChecks.required(properties.getBucket(), "bucket");
+            StaticCredentialsProvider credentials = StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                    StoragePropertiesChecks.required(properties.getAccessKey(), "access-key"),
+                    StoragePropertiesChecks.required(properties.getSecretKey(), "secret-key")));
+            Region region = Region.of(StringUtils.hasText(properties.getRegion()) ? properties.getRegion() : DEFAULT_REGION);
+
+            S3ClientBuilder clientBuilder = S3Client.builder()
+                    .endpointOverride(endpoint)
+                    .region(region)
+                    .credentialsProvider(credentials)
+                    .forcePathStyle(true);
+            OwnClient.checksumsOnlyWhenRequired(clientBuilder);
+            S3Presigner presigner = S3Presigner.builder()
+                    .endpointOverride(endpoint)
+                    .region(region)
+                    .credentialsProvider(credentials)
+                    .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+                    .build();
+            return new ClosingS3ObjectStorage(clientBuilder.build(), presigner, bucket);
+        }
+    }
+
+    /**
+     * 안에서 만든 클라이언트를 빈이 닫힐 때 함께 닫는다 (Spring 이 AutoCloseable 빈의 close 를 부른다).
+     */
+    static final class ClosingS3ObjectStorage extends S3ObjectStorage implements AutoCloseable {
+
+        private final S3Client client;
+        private final S3Presigner presigner;
+
+        ClosingS3ObjectStorage(S3Client client, S3Presigner presigner, String bucket) {
+            super(client, presigner, bucket);
+            this.client = client;
+            this.presigner = presigner;
+        }
+
+        @Override
+        public void close() {
+            presigner.close();
+            client.close();
+        }
+    }
 }

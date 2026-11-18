@@ -11,13 +11,23 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *   infra:
  *     storage:
  *       enabled: true
- *       type: s3                     # s3 | minio
+ *       type: s3                     # s3 | garage | minio(새로 쓰지 않음)
  *       bucket: my-bucket
- *       region: ap-northeast-2       # s3: 비우면 AWS 기본 설정(AWS_REGION 등)을 따른다
- *       endpoint:                    # s3: 비움(S3 호환 저장소면 그 주소) / minio: 필수 (예: http://localhost:9000)
- *       access-key: ${STORAGE_ACCESS_KEY}  # s3: 비우면 AWS 기본 자격 증명(IAM Role 등) / minio: 필수
+ *       region: ap-northeast-2       # s3: 비우면 AWS 기본 설정(AWS_REGION 등)을 따른다 / garage: 비우면 garage
+ *       endpoint:                    # s3: 비움(S3 호환 저장소면 그 주소) / garage · minio: 필수 (예: http://localhost:3900)
+ *       access-key: ${STORAGE_ACCESS_KEY}  # s3: 비우면 AWS 기본 자격 증명(IAM Role 등) / garage · minio: 필수
  *       secret-key: ${STORAGE_SECRET_KEY}
- *       path-style-access: false     # s3: endpoint 로 S3 호환 저장소에 붙을 때 true
+ *       path-style-access: false     # s3: endpoint 로 S3 호환 저장소에 붙을 때 true / garage: 늘 path-style (설정 무시)
+ * </pre>
+ * Garage 예:
+ * <pre>
+ * iturtle.infra.storage:
+ *   enabled: true
+ *   type: garage
+ *   bucket: iturtle-files
+ *   endpoint: http://garage:3900
+ *   access-key: ${STORAGE_ACCESS_KEY}
+ *   secret-key: ${STORAGE_SECRET_KEY}
  * </pre>
  */
 @Getter
