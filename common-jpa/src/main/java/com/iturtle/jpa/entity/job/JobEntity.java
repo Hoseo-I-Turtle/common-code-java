@@ -15,6 +15,8 @@ import java.time.Instant;
  * JOB_STATUS 는 enum 이나 String 이며, 어느 쪽이든 문자열로 저장한다 (enum 은 이름). 단계 구성, 실패 / 재시도,
  * 작업 인자는 자식 엔티티가 정한다. 외부 작업(업로드 등)은 DB 트랜잭션에 묶이지 않으므로 재시도 시 같은 단계가
  * 다시 실행될 수 있다. 각 단계는 다시 실행해도 안전하게 만든다.
+ * <p>
+ * 실패하면 간격을 두고 다시 시도하는 작업(외부 서비스 동기화 등)은 {@link RetryableJobEntity} 를 상속한다.
  * <pre>
  * public enum ResizeStatus { RECEIVED, DOWNLOADING, RESIZING, UPLOADING, DONE }
  *
@@ -64,6 +66,21 @@ public abstract class JobEntity<JOB_STATUS> extends CreatedAtEntity {
     public void markFinished(JOB_STATUS status) {
         this.status = status;
         finishedAt = Instant.now();
+    }
+
+    /**
+     * 시각은 그대로 두고 상태만 바꾼다 (실패 뒤 다시 대기로 돌릴 때 등). 자식 엔티티가 상태 전이 규칙을 정할 때 쓴다.
+     */
+    protected void changeStatus(JOB_STATUS status) {
+        this.status = status;
+    }
+
+    /**
+     * 끝난 작업을 다시 연다. 상태를 바꾸고 종료 시각을 지운다 (시작 시각은 처음 기록을 유지한다).
+     */
+    protected void reopen(JOB_STATUS status) {
+        this.status = status;
+        finishedAt = null;
     }
 
 }

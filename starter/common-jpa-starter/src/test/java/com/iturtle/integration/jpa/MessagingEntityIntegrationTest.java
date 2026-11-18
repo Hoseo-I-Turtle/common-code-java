@@ -1,5 +1,6 @@
 package com.iturtle.integration.jpa;
 
+import com.iturtle.core.retry.BackoffPolicy;
 import com.iturtle.jpa.entity.messaging.InboxStatus;
 import com.iturtle.jpa.entity.messaging.OutboxStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -10,6 +11,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -77,6 +80,35 @@ class MessagingEntityIntegrationTest {
         assertEquals(OutboxStatus.PUBLISHED, published.getStatus());
         assertEquals(2, published.getAttempts());
         assertNotNull(published.getPublishedAt());
+    }
+
+    @Test
+    void outboxRetriesWithBackoffThenFails() {
+        Instant now = Instant.parse("2026-11-18T00:00:00Z");
+        BackoffPolicy policy = BackoffPolicy.fixed(Duration.ofSeconds(30), 2);
+        Long id = outboxRepository.saveAndFlush(new TestOutbox("e-retry", "OrderCreated", "{}")).getId();
+
+        TestOutbox outbox = outboxRepository.findById(id).orElseThrow();
+        assertNull(outbox.getNextRunAt());
+        assertTrue(outbox.isDue(now));
+        outbox.markFailed("broker down", policy, now);
+        outboxRepository.saveAndFlush(outbox);
+
+        TestOutbox waiting = outboxRepository.findById(id).orElseThrow();
+        assertEquals(OutboxStatus.PENDING, waiting.getStatus());
+        assertEquals(1, waiting.getAttempts());
+        assertEquals(now.plusSeconds(30), waiting.getNextRunAt());
+        assertEquals("broker down", waiting.getLastError());
+        assertFalse(waiting.isDue(now));
+        assertTrue(waiting.isDue(now.plusSeconds(30)));
+
+        waiting.markFailed("still down", policy, now);
+        outboxRepository.saveAndFlush(waiting);
+        TestOutbox failed = outboxRepository.findById(id).orElseThrow();
+        assertEquals(OutboxStatus.FAILED, failed.getStatus());
+        assertEquals(2, failed.getAttempts());
+        assertNull(failed.getNextRunAt());
+        assertFalse(failed.isDue(now.plusSeconds(3600)));
     }
 
     @Test

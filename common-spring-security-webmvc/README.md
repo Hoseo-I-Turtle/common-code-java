@@ -49,6 +49,7 @@ Spring Security 를 쓰는 MVC 서비스용 모듈. Security 오류(401 / 403)�
 | `JwtAuthenticationFilter` | `Authorization: Bearer` 토큰을 지정한 토큰 종류로 검증하고, `sub` 로 조회한 `UserDetails` 를 SecurityContext 에 넣는다 |
 | `JwtBlacklistFilter` | `TokenBlacklist` 에서 무효화된 토큰이면 401 `J003` 으로 응답한다 |
 | `BearerTokens` | `Authorization: Bearer` 헤더에서 토큰을 꺼낸다 (JWT 필터 공용, 패키지 내부) |
+| `CsrfCookieFilter` | 세션 · 쿠키 방식 서비스에서 CSRF 토큰을 요청마다 미리 만들어 `XSRF-TOKEN` 쿠키가 항상 내려가게 한다 (지연 생성 때문에 GET 만 한 화면의 다음 POST 가 403 이 되는 것을 막음). 빈으로 등록하지 않고 `CsrfFilter` 뒤에 직접 넣는다 |
 
 ### `com.iturtle.spring.security.webmvc.autoconfigure` (`common-security-webmvc-starter` 에 있음)
 

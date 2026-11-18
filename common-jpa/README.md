@@ -16,6 +16,7 @@ JPA 를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
    │  └ PolymorphicOutboxEntity<EVENT_TYPE, AGGREGATE_TYPE, EVENT_ID>  + aggregateType, aggregateId
    ├ InboxEntity<EVENT_TYPE, MESSAGE_ID> + messageId, eventType, payload, status, attempts, processedAt ← 중복 처리 방지 inbox
    ├ JobEntity<JOB_STATUS>        + status, startedAt, finishedAt                               ← 여러 단계를 거치는 작업
+   │  └ RetryableJobEntity        + attempts, nextRunAt, lastError (status = RetryableJobStatus) ← 실패하면 간격을 두고 다시 시도하는 작업
    ├ JwtRefreshTokenEntity<SUBJECT_ID, REVOKE_REASON>  + subject, familyId, jti, previousJti, tokenHash, expiresAt, revoked*  ← refresh 토큰 로테이션
    └ TimeEntity                   + updatedAt
       ├ SoftDeleteTimeEntity      + deletedAt
@@ -32,6 +33,14 @@ JPA 를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
   Debezium Outbox Event Router 를 쓰는 등 컬럼으로 읽어야 할 때만 `PolymorphicOutboxEntity` 를 쓴다.
 - Job 은 `markRunning(status)` / `markFinished(status)` 로 진행 상황을 바꾸며, 처음 진행할 때 `startedAt`, 끝날 때
   `finishedAt` 을 기록한다. 단계 구성, 실패 / 재시도, 작업 인자는 자식 엔티티가 정한다.
+- 외부 서비스 호출처럼 DB 트랜잭션에 묶을 수 없는 일은 `RetryableJobEntity` 를 상속한 행을 **도메인 변경과 같은 트랜잭션에서** 남기고
+  주기 작업이 꺼내 실행한다 (커밋되면 반드시 실행, 롤백되면 실행 안 됨 = transactional outbox 와 같은 보장).
+  `start()` → `succeed()` / `fail(error, BackoffPolicy)`. 실패하면 시도 횟수가 남은 동안 `PENDING` + `nextRunAt`, 다 쓰면 `FAILED`.
+  사람이 다시 시도하면 `retryNow(now)`(횟수 초기화), 실행 중 멈춘 행은 `requeue(now)`. 꺼낼 때는 `SKIP LOCKED` 로 잠근다 (javadoc 예시).
+  `lastError` 는 1000자로 자르며, 외부 응답 본문처럼 비밀값이 섞일 수 있는 값을 그대로 넣지 않는다.
+- Outbox 는 `markFailed(error, BackoffPolicy)` 로 재시도할 수 있다. 시도 횟수가 남으면 `PENDING` + `nextRunAt`, 다 쓰면 `FAILED`.
+  릴레이는 `status = PENDING and (next_run_at is null or next_run_at <= now)` 를 읽는다 (`isDue(now)`).
+  **v0.0.5 에서 `next_run_at`, `last_error` 칸이 더해졌다** (Outbox 를 쓰는 서비스는 DDL 필요).
 - 제네릭 타입 파라미터 이름은 그 타입을 쓰는 필드 이름이다 (`eventType` → `EVENT_TYPE`, `eventId` → `EVENT_ID`, `subject` → `SUBJECT_ID`).
   - 종류 필드(`*_TYPE`, `JOB_STATUS`, `REVOKE_REASON`)는 enum 이나 String 이며 문자열로 저장한다.
   - ID 필드는 서비스가 고른 타입의 컬럼이 된다 (Long → bigint, UUID → uuid / binary(16), String → varchar).
@@ -74,7 +83,7 @@ JPA 를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
 
 | 클래스 | 책임 |
 |---|---|
-| `OutboxEntity<EVENT_TYPE, EVENT_ID>` | `CreatedAtEntity` + 발행할 이벤트(`eventId: EVENT_ID`, `eventType: EVENT_TYPE`, `payload`)와 발행 진행 상황(`status`, `attempts`, `publishedAt`) |
+| `OutboxEntity<EVENT_TYPE, EVENT_ID>` | `CreatedAtEntity` + 발행할 이벤트(`eventId: EVENT_ID`, `eventType: EVENT_TYPE`, `payload`)와 발행 진행 상황(`status`, `attempts`, `publishedAt`, `nextRunAt`, `lastError`). 재시도 `markFailed(error, BackoffPolicy)`, 발행할 차례 `isDue` |
 | `PolymorphicOutboxEntity<EVENT_TYPE, AGGREGATE_TYPE, EVENT_ID>` | `OutboxEntity<EVENT_TYPE, EVENT_ID>` + 이벤트가 나온 aggregate 종류 / 식별자(`aggregateType: AGGREGATE_TYPE`, `aggregateId`) |
 | `OutboxStatus` | `PENDING` → `PUBLISHED` / `FAILED` |
 | `InboxEntity<EVENT_TYPE, MESSAGE_ID>` | `CreatedAtEntity` + 받은 메시지(`messageId: MESSAGE_ID` unique, `eventType: EVENT_TYPE`, `payload`)와 처리 진행 상황(`status`, `attempts`, `processedAt`) |
@@ -84,7 +93,9 @@ JPA 를 사용하는 서비스용 공통 코드. `common-core` 를 포함한다.
 
 | 클래스 | 책임 |
 |---|---|
-| `JobEntity<JOB_STATUS>` | `CreatedAtEntity` + 작업 진행 상황(`status: JOB_STATUS`)과 시작 / 종료 시각(`startedAt`, `finishedAt`) |
+| `JobEntity<JOB_STATUS>` | `CreatedAtEntity` + 작업 진행 상황(`status: JOB_STATUS`)과 시작 / 종료 시각(`startedAt`, `finishedAt`). 자식이 상태 전이를 정할 때 `changeStatus` · `reopen` |
+| `RetryableJobEntity` | `JobEntity<RetryableJobStatus>` + 시도 횟수(`attempts`), 다음 시도 시각(`nextRunAt`), 마지막 오류(`lastError`). `start` / `succeed` / `fail(error, BackoffPolicy)` / `retryNow` / `requeue` / `isDue` |
+| `RetryableJobStatus` | `PENDING` → `RUNNING` → `SUCCEEDED`, 실패하면 `PENDING`(다음 시도) 또는 `FAILED`(다 씀) |
 
 ### `com.iturtle.jpa.entity.auth`
 

@@ -35,6 +35,18 @@
 - 모든 실패는 `StorageException`(`BusinessException`, `C010` 502)으로 던진다. 호출한 쪽은 인프라와 무관하게 이것만 잡고,
   잡지 않으면 전역 예외 핸들러가 502 로 응답한다.
 - 버킷은 미리 만들어 둔다. 구현체는 버킷을 만들지 않는다.
+- 브라우저가 서버를 거치지 않고 올리고 받을 때:
+  - 내려받기는 권한을 확인한 뒤 `createDownloadUrl(key, 짧은 시간, DownloadOptions)` 로 받을 이름과 `inline` / `attachment` 를 정한다.
+    객체 키에는 원래 이름을 넣지 않으므로 이름은 여기서 정한다. 이미지 · PDF 외에는 `attachment` 로 만든다 (HTML · SVG 를 열면 스크립트가 돈다).
+  - 올린 뒤에는 `stat` 으로 실제 크기를, `downloadRange(key, 0, 512)` 로 앞부분을 받아 실제 형식(common-core `FileTypePolicy`)을 확인한다.
+    클라이언트가 알려 준 크기 · 형식을 믿지 않는다.
+  - 큰 파일은 나눠 올리기: `initiateMultipartUpload` → 조각마다 `createUploadPartUrl` → 브라우저가 PUT 하고 응답 `ETag` 를 모음 →
+    `completeMultipartUpload`. 마지막이 아닌 조각은 5MB 이상이다. 브라우저가 ETag 를 읽으려면 버킷 CORS 의 ExposeHeaders 에 `ETag` 를 넣는다.
+    끝나지 않은 세션은 조각이 남으므로 `abortMultipartUpload` 하는 정리나 버킷 수명 주기 규칙(`AbortIncompleteMultipartUpload`)을 둔다.
+  - **나눠 올리기는 `S3ObjectStorage` 만 지원한다** (`supportsMultipartUpload()`). MinIO SDK 는 조각별 서명 주소를 공개 API 로 주지 않는다.
+    MinIO 서버에서 나눠 올리기가 필요하면 `type=s3` + `endpoint` + `path-style-access=true` 로 쓴다.
+  - `ObjectStorage` 의 v0.0.5 메서드(`createDownloadUrl(…, DownloadOptions)`, `stat`, `downloadRange`, 나눠 올리기)는 기본 구현이
+    `UnsupportedOperationException` 이다. 직접 구현체를 둔 서비스도 컴파일이 깨지지 않는다.
 
 ### Redis
 
@@ -82,7 +94,7 @@
 
 | 클래스 | 책임 |
 |---|---|
-| `ObjectStorage` | 파일 업로드 / 다운로드 / 삭제 / 존재 확인, presigned 업로드 / 다운로드 URL 생성 (인터페이스) |
+| `ObjectStorage` | 파일 업로드 / 다운로드 / 삭제 / 존재 확인, presigned 업로드 / 다운로드 URL 생성, 받을 이름 · 열기 방식을 정한 다운로드 URL, 객체 정보(`stat`), 범위 받기(`downloadRange`), 나눠 올리기(시작 · 조각 URL · 완료 · 취소) (인터페이스) |
 | `StorageProperties` | `iturtle.infra.storage.*` 설정 (enabled, type, bucket, region, endpoint, access-key, secret-key, path-style-access) |
 | `StorageType` | 구현체 종류 (`S3`, `MINIO`) |
 | `StorageException` | 스토리지 요청 실패 (`BusinessException`, `CommonErrorCode.EXTERNAL_API_ERROR`). 구현체가 SDK 예외를 감싼다 |
@@ -93,13 +105,17 @@
 |---|---|
 | `StorageUploadCommand` | 올릴 파일 (`storageKey`, `content`, `sizeBytes`, `contentType`, `originalFilename`) |
 | `StorageUploadResult` | 올린 파일 정보 (`storageKey`, `originalFilename`, `contentType`, `sizeBytes`). `StorageEntity` 와 같은 필드 |
+| `DownloadOptions` | 다운로드 URL 의 응답 헤더 (`filename`, `INLINE` / `ATTACHMENT`, `contentType`). `contentDispositionHeader()` 는 RFC 6266 (`filename*=UTF-8''…`), 헤더 주입 문자 제거 |
+| `StorageObjectInfo` | 객체 정보 (`storageKey`, `sizeBytes`, `contentType`, `etag`, `lastModified`) |
+| `MultipartUploadSession` | 시작한 나눠 올리기 (`storageKey`, `uploadId`) |
+| `CompletedPart` | 올린 조각 (`partNumber` 1~10000, `etag`) |
 
 ### `com.iturtle.infra.objectstorage.s3` / `com.iturtle.infra.objectstorage.minio`
 
 | 클래스 | 책임 |
 |---|---|
-| `S3ObjectStorage` | AWS SDK(`S3Client`, `S3Presigner`)로 구현 |
-| `MinioObjectStorage` | MinIO SDK(`MinioClient`)로 구현 |
+| `S3ObjectStorage` | AWS SDK(`S3Client`, `S3Presigner`)로 구현. 나눠 올리기 지원 |
+| `MinioObjectStorage` | MinIO SDK(`MinioClient`)로 구현. 나눠 올리기는 지원하지 않음 |
 
 ### `com.iturtle.infra.redis`
 

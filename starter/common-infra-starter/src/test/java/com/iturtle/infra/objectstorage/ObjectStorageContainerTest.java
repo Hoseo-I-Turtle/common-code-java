@@ -2,6 +2,10 @@ package com.iturtle.infra.objectstorage;
 
 import com.iturtle.infra.autoconfigure.MinioStorageAutoConfiguration;
 import com.iturtle.infra.autoconfigure.S3StorageAutoConfiguration;
+import com.iturtle.infra.objectstorage.dto.CompletedPart;
+import com.iturtle.infra.objectstorage.dto.DownloadOptions;
+import com.iturtle.infra.objectstorage.dto.MultipartUploadSession;
+import com.iturtle.infra.objectstorage.dto.StorageObjectInfo;
 import com.iturtle.infra.objectstorage.dto.StorageUploadCommand;
 import com.iturtle.infra.objectstorage.dto.StorageUploadResult;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,6 +29,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -97,6 +102,26 @@ class ObjectStorageContainerTest {
         assertThat(get.statusCode()).isEqualTo(200);
         assertThat(get.body()).isEqualTo("via-url");
 
+        // 객체 정보 · 앞부분 받기
+        StorageObjectInfo info = storage.stat(key).orElseThrow();
+        assertThat(info.sizeBytes()).isEqualTo(content.length);
+        assertThat(info.contentType()).isEqualTo("text/plain");
+        assertThat(info.etag()).isNotBlank().doesNotStartWith("\"");
+        assertThat(storage.stat(prefix + "/none.txt")).isEmpty();
+        try (InputStream in = storage.downloadRange(key, 1, 3)) {
+            assertThat(new String(in.readAllBytes(), StandardCharsets.UTF_8)).isEqualTo("ell");
+        }
+        try (InputStream in = storage.downloadRange(key, 0, 512)) {   // 파일보다 길게 달라고 해도 있는 만큼
+            assertThat(in.readAllBytes()).isEqualTo(content);
+        }
+
+        // 받을 이름 · 열기 방식을 정한 내려받기 URL
+        HttpResponse<String> named = http.send(HttpRequest.newBuilder(storage.createDownloadUrl(key, Duration.ofMinutes(5),
+                DownloadOptions.attachment("회의록.txt")).toURI()).GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertThat(named.statusCode()).isEqualTo(200);
+        assertThat(named.headers().firstValue("Content-Disposition")).hasValue(
+                DownloadOptions.attachment("회의록.txt").contentDispositionHeader());
+
         storage.delete(key);
         assertThat(storage.exists(key)).isFalse();
         storage.delete(key);   // 없는 키를 지워도 실패하지 않는다
@@ -104,6 +129,57 @@ class ObjectStorageContainerTest {
         String missing = prefix + "/missing.txt";
         assertThat(storage.exists(missing)).isFalse();
         assertThatThrownBy(() -> storage.download(missing)).isInstanceOf(StorageException.class);
+    }
+
+    @Test
+    void s3MultipartUpload() {
+        runner.withPropertyValues(properties("s3"))
+                .withPropertyValues("iturtle.infra.storage.path-style-access=true")
+                .run(context -> {
+                    ObjectStorage storage = context.getBean(ObjectStorage.class);
+                    assertThat(storage.supportsMultipartUpload()).isTrue();
+                    String key = "s3/multipart.bin";
+                    byte[] first = new byte[5 * 1024 * 1024];   // 마지막이 아닌 조각은 5MB 이상
+                    java.util.Arrays.fill(first, (byte) 'a');
+                    byte[] second = "tail".getBytes(StandardCharsets.UTF_8);
+
+                    MultipartUploadSession session = storage.initiateMultipartUpload(key, "application/octet-stream");
+                    HttpClient http = HttpClient.newHttpClient();
+                    String etag1 = putPart(http, storage.createUploadPartUrl(key, session.uploadId(), 1, Duration.ofMinutes(5)), first);
+                    String etag2 = putPart(http, storage.createUploadPartUrl(key, session.uploadId(), 2, Duration.ofMinutes(5)), second);
+                    // 순서가 섞여 와도 partNumber 로 정렬해 합친다
+                    storage.completeMultipartUpload(key, session.uploadId(),
+                            List.of(new CompletedPart(2, etag2), new CompletedPart(1, etag1)));
+
+                    assertThat(storage.stat(key).orElseThrow().sizeBytes()).isEqualTo(first.length + second.length);
+                    try (InputStream in = storage.downloadRange(key, first.length, 4)) {
+                        assertThat(new String(in.readAllBytes(), StandardCharsets.UTF_8)).isEqualTo("tail");
+                    }
+
+                    // 취소한 세션은 다시 취소해도 실패하지 않는다
+                    MultipartUploadSession aborted = storage.initiateMultipartUpload("s3/aborted.bin", null);
+                    storage.abortMultipartUpload("s3/aborted.bin", aborted.uploadId());
+                    storage.abortMultipartUpload("s3/aborted.bin", aborted.uploadId());
+                    assertThat(storage.exists("s3/aborted.bin")).isFalse();
+                });
+    }
+
+    @Test
+    void minioDoesNotSupportMultipart() {
+        runner.withPropertyValues(properties("minio"))
+                .run(context -> {
+                    ObjectStorage storage = context.getBean(ObjectStorage.class);
+                    assertThat(storage.supportsMultipartUpload()).isFalse();
+                    assertThatThrownBy(() -> storage.initiateMultipartUpload("minio/x.bin", null))
+                            .isInstanceOf(UnsupportedOperationException.class);
+                });
+    }
+
+    private static String putPart(HttpClient http, java.net.URL url, byte[] body) throws Exception {
+        HttpResponse<Void> response = http.send(HttpRequest.newBuilder(url.toURI())
+                .PUT(HttpRequest.BodyPublishers.ofByteArray(body)).build(), HttpResponse.BodyHandlers.discarding());
+        assertThat(response.statusCode()).isEqualTo(200);
+        return response.headers().firstValue("ETag").orElseThrow();
     }
 
     private static String[] properties(String type) {

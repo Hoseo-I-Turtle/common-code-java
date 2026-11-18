@@ -29,7 +29,25 @@
 |---|---|
 | `IdGenerateUtils` | ID 생성. UUID v7(시간순 정렬) / v4, 길이별 랜덤 hex 문자열 |
 | `MaskingUtils` | 개인정보 마스킹 (이름, 전화번호, 이메일, 주민등록번호, 카드번호, 계좌번호, 범위 지정) |
-| `HashUtils` | 단방향 해시. 토큰 원문 대신 저장할 SHA-256 hex(`sha256Hex`)와 비교(`matchesSha256Hex`, 시간 일정). 비밀번호에는 쓰지 않는다 |
+| `HashUtils` | 단방향 해시. 토큰 원문 대신 저장할 SHA-256 hex(`sha256Hex`)와 비교(`matchesSha256Hex`, 시간 일정). 비밀번호에는 쓰지 않는다. 스트림 SHA-256(`sha256Hex(InputStream)`, 파일 무결성), HMAC-SHA256 서명 · 검증(`hmacSha256Hex`, `matchesHmacSha256Hex`, 웹훅 서명), 시간 일정 비교(`constantTimeEquals`) |
+| `OrderKeyUtils` | 끌어서 순서를 바꾸는 목록의 문자열 순서 키 (fractional indexing). `between(앞, 뒤)` 로 옮긴 행 하나만 바꾼다. base36 소문자라 대소문자 무시 정렬(MySQL `utf8mb4_0900_ai_ci`)에서도 순서가 같다. 키가 길어지면 `evenly(n)` 으로 다시 매긴다 |
+
+### `com.iturtle.core.file`
+
+| 클래스 | 책임 |
+|---|---|
+| `FileTypePolicy` | 올린 파일을 받아도 되는지 판단 (`check(이름, 앞부분)`). 차단 확장자 → 실행 파일 내용 → 확장자와 내용 형식 불일치 순으로 거절한다. 기본 차단 목록 `DEFAULT_BLOCKED_EXTENSIONS`, 앞부분 길이 `HEAD_BYTES`(512) |
+| `FileTypeCheck` | 판단 결과 (`allowed`, `reason`, `extension`, `detected`). 저장할 MIME(`contentType`, 모르면 `application/octet-stream`), 브라우저에서 열어도 되는지(`inlineViewable`: 이미지 · PDF 만, SVG 는 열지 않음) |
+| `FileSignature` | 매직 넘버로 알 수 있는 형식 (이미지, PDF, ZIP 계열(docx · hwpx 등), OLE2(doc · hwp 등), 압축, 미디어, 실행 파일 · 스크립트, SVG)과 그 형식의 확장자 |
+
+- 확장자와 올린 쪽이 보낸 Content-Type 을 믿지 않고 내용과 대조한다. Apache Tika 같은 라이브러리 대신 필요한 형식의 시그니처만 둔다 (의존성 없음).
+- 압축 파일 안은 검사하지 않는다. 크기 제한과 쓰임별 허용 형식(프로필 사진은 이미지만 등)은 서비스가 정한다.
+
+### `com.iturtle.core.retry`
+
+| 클래스 | 책임 |
+|---|---|
+| `BackoffPolicy` | 실패한 작업의 다음 시도 시각. 간격이 `multiplier` 배씩 늘고 `maxDelay` 를 넘지 않으며, `maxAttempts` 번 시도하면 그만둔다 (`exponential`, `fixed`, `nextAttemptAt`, `exhausted`). common-jpa `RetryableJobEntity` · `OutboxEntity` 가 쓴다 |
 
 ### `com.iturtle.core.strategy`
 
