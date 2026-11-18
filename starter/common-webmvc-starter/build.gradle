@@ -30,6 +30,8 @@ dependencies {
     compileOnly 'org.springframework.boot:spring-boot-autoconfigure'   // 자동 설정, Boot 3 ErrorController / RestClientCustomizer
     compileOnly 'org.springframework:spring-web'                       // RestClient 인터셉터
     compileOnly 'jakarta.servlet:jakarta.servlet-api'                  // 필터 등록
+    compileOnly 'com.fasterxml.jackson.core:jackson-databind'          // PATCH Optional 모듈 (Boot 3)
+    compileOnly "tools.jackson.core:jackson-databind:${jackson3Version}"  // PATCH Optional 모듈 (Boot 4)
 
     // src/boot4: Boot 4 코드
     boot4CompileOnly project(':common-spring-webmvc')

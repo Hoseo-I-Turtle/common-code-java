@@ -63,6 +63,19 @@ MVC / WebFlux 가 함께 쓰는 웹 공통 코드. `common-spring-core` 를 포�
 | `ClientLogInterceptor` | RestClient 외부 호출 로그 한 줄 기록 |
 | `HttpClientDefaultsListener` | RestClient / RestTemplate 기본 타임아웃 지정 |
 
+### `com.iturtle.spring.web.json`
+
+PATCH 본문에서 "보내지 않은 칸"과 "null 을 보낸 칸"을 구분한다. 요청 record 의 칸을 `Optional<T>` 로 두면
+보내지 않음 → `null`(그대로), `null` → `Optional.empty()`(비움), 값 → `Optional.of(값)`(바꿈)으로 들어온다.
+Jackson 기본은 보내지 않은 칸도 `Optional.empty()` 라 둘을 구분할 수 없다. 날짜 · 숫자 · 목록 칸에도 같은 방법을 쓴다.
+
+| 클래스 | 책임 |
+|---|---|
+| `PatchOptionalJackson2Module` | Jackson 2 (Boot 3) 용. 보내지 않은 `Optional` 칸을 `null` 로 |
+| `PatchOptionalJackson3Module` | Jackson 3 (Boot 4) 용. 같은 동작 |
+
+`common-webmvc-starter` 가 서비스의 Jackson 에 맞는 것을 빈으로 등록한다 (`iturtle.web.json.absent-optional-as-null=false` 로 끈다).
+
 ### `com.iturtle.spring.web.logging`
 
 | 클래스 | 책임 |

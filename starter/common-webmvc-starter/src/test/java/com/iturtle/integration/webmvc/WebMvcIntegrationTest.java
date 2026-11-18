@@ -107,6 +107,17 @@ class WebMvcIntegrationTest {
     }
 
     @Test
+    void patchBodyTellsAbsentFromNull() throws Exception {
+        ResponseEntity<String> response = client().patch().uri("/test/patch")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"title\": null, \"on\": \"2026-11-30\"}")
+                .exchange((request, clientResponse) -> toEntity(clientResponse));
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("title=empty,on=2026-11-30,memo=absent", objectMapper.readTree(response.getBody()).get("data").asText());
+    }
+
+    @Test
     void validationErrorIncludesFieldErrors() throws Exception {
         ResponseEntity<String> response = client().post().uri("/test/valid")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -217,6 +228,16 @@ class WebMvcIntegrationTest {
             throw new BusinessException(CommonErrorCode.CONFLICT);
         }
 
+        @org.springframework.web.bind.annotation.PatchMapping("/test/patch")
+        ApiBaseResponse<String> patch(@RequestBody PatchRequest request) {
+            return ApiBaseResponse.success("title=" + describe(request.title()) + ",on=" + describe(request.on())
+                    + ",memo=" + describe(request.memo()));
+        }
+
+        private static String describe(java.util.Optional<?> field) {
+            return field == null ? "absent" : field.map(Object::toString).orElse("empty");
+        }
+
         @PostMapping("/test/valid")
         void valid(@Valid @RequestBody SignUpRequest request) {
         }
@@ -225,6 +246,10 @@ class WebMvcIntegrationTest {
         void sendError(jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
             response.sendError(403);
         }
+    }
+
+    record PatchRequest(java.util.Optional<String> title, java.util.Optional<java.time.LocalDate> on,
+                        java.util.Optional<String> memo) {
     }
 
     record SignUpRequest(@NotBlank String email) {
